@@ -1,0 +1,54 @@
+{
+  "productName": "arch-explorer",
+  "version": "0.1.0",
+  "identifier": "dev.alx.arch-explorer",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Arch Explorer",
+        "width": 1200,
+        "height": 750,
+        "minWidth": 800,
+        "minHeight": 500,
+        "decorations": false,
+        "transparent": true,
+        "center": true,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": [
+          "**",
+          "$HOME/**",
+          "$APPDATA/**",
+          "$LOCALAPPDATA/**",
+          "/home/**",
+          "/run/media/**",
+          "/mnt/**",
+          "/tmp/**"
+        ]
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}
