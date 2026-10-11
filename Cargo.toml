@@ -1,0 +1,73 @@
+[package]
+name        = "arch-explorer"
+version     = "0.2.0"
+description = "Blazing fast file manager for Arch Linux — egui native, AEX theming"
+authors     = ["ALX"]
+edition     = "2021"
+
+[[bin]]
+name = "arch-explorer"
+path = "src/main.rs"
+
+# ── GUI ──────────────────────────────────────────────────────────────────────
+[dependencies]
+# eframe = egui app runner (handles window, wgpu/opengl, events)
+# wayland + x11 her ikisi de, kullanıcı ne kullanıyorsa devreye girer
+eframe = { version = "0.29", default-features = false, features = [
+    "wgpu",          # GPU rendering (daha iyi performance, wayland'da zorunlu)
+    "wayland",       # Hyprland için
+    "x11",           # fallback
+    "default_fonts", # built-in font (kullanıcı font yoksa)
+    "persistence",   # egui state'i diske kaydet (panel boyutları vs)
+] }
+egui          = "0.29"
+egui_extras   = { version = "0.29", features = ["image", "svg", "syntect"] }
+
+# Görsel: thumbnail + image preview
+image         = { version = "0.25", features = ["png", "jpeg", "webp", "gif", "ico"] }
+
+# ── Serialization ─────────────────────────────────────────────────────────────
+serde         = { version = "1", features = ["derive"] }
+serde_json    = "1"
+toml          = "0.8"   # .aex theme parser için
+
+# ── Async (mounts.rs için tokio şart) ────────────────────────────────────────
+tokio         = { version = "1", features = ["full"] }
+
+# ── Filesystem ───────────────────────────────────────────────────────────────
+walkdir       = "2"
+notify        = "6"     # inotify watcher
+trash         = "3"     # çöpe at
+mime_guess    = "2"     # mime type detection
+dirs          = "5"     # home/config/data dir helpers
+
+# ── Mount chain ──────────────────────────────────────────────────────────────
+zbus          = { version = "4", default-features = false, features = ["tokio"] }
+
+# ── Utils ────────────────────────────────────────────────────────────────────
+chrono        = { version = "0.4", features = ["serde"] }
+anyhow        = "1"
+log           = "0.4"
+env_logger    = "0.11"
+libc          = "0.2"
+base64        = "0.22"
+open          = "5"
+
+# ── Clipboard (sistem clipboard — egui kendi içinde sadece text yapıyor) ─────
+arboard       = "3"     # Wayland + X11 clipboard, dosya path'leri için
+
+[profile.dev]
+opt-level   = 1       # dev'de bile biraz optimize — egui compile süresini etkiler
+
+[profile.release]
+panic       = "abort"
+codegen-units = 1
+lto         = true
+opt-level   = 3       # egui için "s" değil "3" — CPU bound rendering
+strip       = true
+
+[profile.release.package.egui]
+opt-level = 3
+
+[profile.release.package.eframe]
+opt-level = 3

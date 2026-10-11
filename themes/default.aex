@@ -1,0 +1,44 @@
+[meta]
+name        = "Arch Explorer Dark"
+author      = "lordblue"
+version     = "1.0.0"
+description = "Default dark theme"
+
+[colors]
+bg_base      = "#0f0f17"
+bg_mantle    = "#13131e"
+bg_crust     = "#0a0a10"
+bg_surface0  = "#1b1b2a"
+bg_surface1  = "#27273d"
+bg_surface2  = "#4e2738"
+accent       = "#ff6b9d"
+accent_dim   = "#cc4f7c"
+accent_glow  = "#ff6b9d30"
+text_primary   = "#f0eeff"
+text_secondary = "#9a9ab2"
+text_hint      = "#60607a"
+text_disabled  = "#3a3a52"
+success = "#5aff8e"
+warning = "#ffd166"
+danger  = "#ff5f6d"
+info    = "#8264ff"
+border       = "#232336"
+border_focus = "#ff6b9d"
+
+[effects]
+window_opacity  = 0.85
+sidebar_opacity = 0.75
+panel_opacity   = 0.90
+card_opacity    = 0.85
+toolbar_opacity = 0.80
+blur_radius     = 16
+glass_panels    = true
+shadow_enabled  = true
+
+[layout]
+grid_item_size = 160.0
+sidebar_width  = 220.0
+preview_width  = 280.0
+
+[icons]
+style = "nerd"
