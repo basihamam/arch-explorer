@@ -290,16 +290,9 @@ pub async fn send_crash_report(title: String, body: String) -> Result<String, St
     let now = chrono::Local::now().format("%Y%m%d_%H%M%S");
     let report_file = log_dir.join(format!("crash_{}.log", now));
     let content = format!("Title: {}\nDate: {}\n\n{}", title, now, body);
+    // Save crash report to disk
     fs::write(&report_file, content).map_err(|e| e.to_string())?;
-
-    // Also attempt to open pre-filled GitHub issue in browser
-    let encoded_title = urlencoding(&title);
-    let encoded_body = urlencoding(&body);
-    let issue_url = format!(
-        "https://github.com/basihamam/arch-explorer-tauri/issues/new?title={}&body={}",
-        encoded_title, encoded_body
-    );
-    let _ = open::that(&issue_url);
+    log::warn!("Crash report saved to {:?}", report_file);
 
     Ok(report_file.to_string_lossy().to_string())
 }

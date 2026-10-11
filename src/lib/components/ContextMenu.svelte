@@ -272,18 +272,34 @@
   }
 
   function copyItems() {
-    if (target && !$selectedPaths.has(target.path)) {
-      selectedPaths.update(s => { const n = new Set(s); n.add(target.path); return n; });
+    let toCopy = [];
+    if (target) {
+      if ($selectedPaths.has(target.path)) {
+        toCopy = [...$selectedPaths];
+      } else {
+        selectedPaths.set(new Set([target.path]));
+        toCopy = [target.path];
+      }
+    } else {
+      toCopy = [...$selectedPaths];
     }
-    copySelected();
+    copySelected(toCopy);
     contextMenu.set(null);
   }
 
   function cutItems() {
-    if (target && !$selectedPaths.has(target.path)) {
-      selectedPaths.update(s => { const n = new Set(s); n.add(target.path); return n; });
+    let toCut = [];
+    if (target) {
+      if ($selectedPaths.has(target.path)) {
+        toCut = [...$selectedPaths];
+      } else {
+        selectedPaths.set(new Set([target.path]));
+        toCut = [target.path];
+      }
+    } else {
+      toCut = [...$selectedPaths];
     }
-    cutSelected();
+    cutSelected(toCut);
     contextMenu.set(null);
   }
 
@@ -574,45 +590,85 @@
         </div>
       {/if}
 
-      <button class="ctx-item" on:click={copyItems}>
+      <button
+        class="ctx-item"
+        on:click={copyItems}
+        on:mouseup={(e) => { if (e.button === 2) copyItems(); }}
+        on:contextmenu|preventDefault|stopPropagation={copyItems}
+      >
         <span class="ctx-icon">⎘</span>
         <span class="ctx-label">Copy</span>
         <span class="ctx-shortcut">Ctrl+C</span>
       </button>
-      <button class="ctx-item" on:click={cutItems}>
+      <button
+        class="ctx-item"
+        on:click={cutItems}
+        on:mouseup={(e) => { if (e.button === 2) cutItems(); }}
+        on:contextmenu|preventDefault|stopPropagation={cutItems}
+      >
         <span class="ctx-icon">✂</span>
         <span class="ctx-label">Cut</span>
         <span class="ctx-shortcut">Ctrl+X</span>
       </button>
       {#if hasClipboard}
-        <button class="ctx-item" on:click={paste}>
+        <button
+          class="ctx-item"
+          on:click={paste}
+          on:mouseup={(e) => { if (e.button === 2) paste(); }}
+          on:contextmenu|preventDefault|stopPropagation={paste}
+        >
           <span class="ctx-icon">📋</span>
           <span class="ctx-label">Paste</span>
           <span class="ctx-shortcut">Ctrl+V</span>
         </button>
       {/if}
-      <button class="ctx-item" on:click={rename}>
+      <button
+        class="ctx-item"
+        on:click={rename}
+        on:mouseup={(e) => { if (e.button === 2) rename(); }}
+        on:contextmenu|preventDefault|stopPropagation={rename}
+      >
         <span class="ctx-icon">✏</span>
         <span class="ctx-label">Rename</span>
         <span class="ctx-shortcut">F2</span>
       </button>
-      <button class="ctx-item" on:click={newFolder}>
+      <button
+        class="ctx-item"
+        on:click={newFolder}
+        on:mouseup={(e) => { if (e.button === 2) newFolder(); }}
+        on:contextmenu|preventDefault|stopPropagation={newFolder}
+      >
         <span class="ctx-icon">📁</span>
         <span class="ctx-label">New Folder</span>
       </button>
-      <button class="ctx-item" on:click={newFile}>
+      <button
+        class="ctx-item"
+        on:click={newFile}
+        on:mouseup={(e) => { if (e.button === 2) newFile(); }}
+        on:contextmenu|preventDefault|stopPropagation={newFile}
+      >
         <span class="ctx-icon">📄</span>
         <span class="ctx-label">New File Here</span>
       </button>
 
       <div class="ctx-sep"></div>
 
-      <button class="ctx-item" on:click={trash}>
+      <button
+        class="ctx-item"
+        on:click={trash}
+        on:mouseup={(e) => { if (e.button === 2) trash(); }}
+        on:contextmenu|preventDefault|stopPropagation={trash}
+      >
         <span class="ctx-icon">🗑</span>
         <span class="ctx-label">Move to Trash</span>
         <span class="ctx-shortcut">Del</span>
       </button>
-      <button class="ctx-item danger" on:click={deletePerma}>
+      <button
+        class="ctx-item danger"
+        on:click={deletePerma}
+        on:mouseup={(e) => { if (e.button === 2) deletePerma(); }}
+        on:contextmenu|preventDefault|stopPropagation={deletePerma}
+      >
         <span class="ctx-icon">✕</span>
         <span class="ctx-label">Delete Permanently</span>
         <span class="ctx-shortcut">Shift+Del</span>

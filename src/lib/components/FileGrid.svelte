@@ -358,12 +358,76 @@
     }, 0);
   }
 
+  function formatFileUri(path) {
+    const clean = path.replace(/\\/g, "/");
+    const parts = clean.split("/").map(seg => encodeURIComponent(seg));
+    return "file://" + parts.join("/");
+  }
+
+  function extractDroppedPaths(e) {
+    let paths = [];
+    try {
+      const internal = e.dataTransfer.getData("application/x-arch-explorer-paths");
+      if (internal) paths = JSON.parse(internal);
+    } catch {}
+    if (!paths.length) {
+      try {
+        const uriList = e.dataTransfer.getData("text/uri-list");
+        if (uriList) {
+          paths = uriList
+            .split(/[\r\n]+/)
+            .map(u => u.trim())
+            .filter(u => u.startsWith("file://"))
+            .map(u => decodeURIComponent(u.replace(/^file:\/\//, "")))
+            .filter(Boolean);
+        }
+      } catch {}
+    }
+    if (!paths.length) {
+      try {
+        const raw = e.dataTransfer.getData("text/plain");
+        if (raw.startsWith("[") && raw.endsWith("]")) {
+          paths = JSON.parse(raw);
+        } else if (raw) {
+          paths = raw.split("\n").map(s => s.trim()).filter(Boolean);
+        }
+      } catch {}
+    }
+    return paths;
+  }
+
   function onDragStart(e, entry) {
     dragSource = entry;
-    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.effectAllowed = "copyMove";
     const sel = [...$selectedPaths];
     const paths = sel.includes(entry.path) && sel.length > 1 ? sel : [entry.path];
-    e.dataTransfer.setData("text/plain", JSON.stringify(paths));
+
+    // 1. text/uri-list: used by Firefox, Chrome, and desktop apps for file drops
+    const uriList = paths.map(formatFileUri).join("\r\n") + "\r\n";
+    try { e.dataTransfer.setData("text/uri-list", uriList); } catch {}
+
+    // 2. x-special/gnome-copied-files: GTK / GNOME drop support
+    try {
+      e.dataTransfer.setData(
+        "x-special/gnome-copied-files",
+        "copy\n" + paths.map(formatFileUri).join("\n")
+      );
+    } catch {}
+
+    // 3. Plain text paths (newline-separated)
+    try { e.dataTransfer.setData("text/plain", paths.join("\n")); } catch {}
+
+    // 4. Internal application format
+    try { e.dataTransfer.setData("application/x-arch-explorer-paths", JSON.stringify(paths)); } catch {}
+
+    // 5. DownloadURL header
+    if (paths.length === 1 && !entry.is_dir) {
+      try {
+        const mime = entry.mime_type || "application/octet-stream";
+        e.dataTransfer.setData("DownloadURL", `${mime}:${entry.name}:${formatFileUri(entry.path)}`);
+      } catch {}
+    }
+
     try {
       setCustomDragImage(e, entry, paths.length);
     } catch {}
@@ -373,13 +437,7 @@
     e.preventDefault();
     e.stopPropagation();
     if (!targetEntry?.is_dir) return;
-    let paths = [];
-    try {
-      paths = JSON.parse(e.dataTransfer.getData("text/plain"));
-    } catch {
-      const raw = e.dataTransfer.getData("text/plain");
-      if (raw) paths = [raw];
-    }
+    let paths = extractDroppedPaths(e);
     if (!paths.length && dragSource) paths = [dragSource.path];
     paths = paths.filter(p => p !== targetEntry.path);
     if (!paths.length) return;
@@ -392,13 +450,7 @@
   async function onDropIntoBg(e) {
     e.preventDefault();
     e.stopPropagation();
-    let paths = [];
-    try {
-      paths = JSON.parse(e.dataTransfer.getData("text/plain"));
-    } catch {
-      const raw = e.dataTransfer.getData("text/plain");
-      if (raw) paths = [raw];
-    }
+    let paths = extractDroppedPaths(e);
     if (!paths.length && dragSource) paths = [dragSource.path];
     if (!paths.length) return;
     dragSource = null;

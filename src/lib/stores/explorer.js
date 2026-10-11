@@ -721,9 +721,9 @@ export const rightSelectedPaths = writable(new Set());
 export const rightEntries = writable([]);
 
 // ---- Clipboard ----
-export function copySelected() {
+export function copySelected(specificPaths) {
   const isRight = get(activePaneId) === "right" && get(showDualPane);
-  let paths = [...(isRight ? get(rightSelectedPaths) : get(selectedPaths))];
+  let paths = specificPaths && specificPaths.length ? [...specificPaths] : [...(isRight ? get(rightSelectedPaths) : get(selectedPaths))];
   if (!paths.length) {
     paths = [...get(selectedPaths), ...get(rightSelectedPaths)];
   }
@@ -736,12 +736,15 @@ export function copySelected() {
   }
   clipboard.set({ paths, mode: "copy", op: "copy" });
   invoke("clipboard_copy", { paths }).catch(() => {});
+  try {
+    navigator.clipboard?.writeText(paths.join("\n")).catch(() => {});
+  } catch {}
   notify("success", `Copied: ${paths.length} item(s)`);
 }
 
-export function cutSelected() {
+export function cutSelected(specificPaths) {
   const isRight = get(activePaneId) === "right" && get(showDualPane);
-  let paths = [...(isRight ? get(rightSelectedPaths) : get(selectedPaths))];
+  let paths = specificPaths && specificPaths.length ? [...specificPaths] : [...(isRight ? get(rightSelectedPaths) : get(selectedPaths))];
   if (!paths.length) {
     paths = [...get(selectedPaths), ...get(rightSelectedPaths)];
   }
@@ -754,6 +757,9 @@ export function cutSelected() {
   }
   clipboard.set({ paths, mode: "cut", op: "cut" });
   invoke("clipboard_cut", { paths }).catch(() => {});
+  try {
+    navigator.clipboard?.writeText(paths.join("\n")).catch(() => {});
+  } catch {}
   notify("info", `Cut: ${paths.length} item(s) — press Ctrl+V to paste`);
 }
 

@@ -164,7 +164,7 @@ ${errorDetail}
 
     invoke("send_crash_report", { title: `[Auto-Crash] ${title}`, body: reportBody })
       .then((path) => {
-        notify("info", `Crash report generated and saved: ${path}`);
+        console.warn("Crash report generated and saved:", path);
       })
       .catch((e) => console.error("Telemetry failed:", e));
   }
