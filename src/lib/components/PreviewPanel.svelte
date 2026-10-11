@@ -570,14 +570,14 @@
         </div>
       </div>
       <div class="pv-meta">
-        <div class="meta-row"><span class="mk">Aygıt</span><span class="mv mono">{$selectedDevice.device}</span></div>
-        <div class="meta-row"><span class="mk">Boyut</span><span class="mv">{$selectedDevice.size}</span></div>
+        <div class="meta-row"><span class="mk">{$t("device")}</span><span class="mv mono">{$selectedDevice.device}</span></div>
+        <div class="meta-row"><span class="mk">{$t("size")}</span><span class="mv">{$selectedDevice.size}</span></div>
         {#if $selectedDevice.mount_point}
           <div class="meta-row"><span class="mk">Mount</span><span class="mv mono" style="font-size:9px">{$selectedDevice.mount_point}</span></div>
         {/if}
         {#if u}
-          <div class="meta-row"><span class="mk">Kullanılan</span><span class="mv">{formatSize(u.used)}</span></div>
-          <div class="meta-row"><span class="mk">Boş</span><span class="mv" style="color:var(--accent)">{formatSize(u.avail)}</span></div>
+          <div class="meta-row"><span class="mk">{$t("used")}</span><span class="mv">{formatSize(u.used)}</span></div>
+          <div class="meta-row"><span class="mk">{$t("free")}</span><span class="mv" style="color:var(--accent)">{formatSize(u.avail)}</span></div>
         {/if}
       </div>
       {#if u}
@@ -688,8 +688,8 @@
         </div>
         {#if activeEntry.is_dir && duResult && !duResult.permission_denied}
           <div class="meta-row">
-            <span class="mk">İçerik</span>
-            <span class="mv">{duResult.file_count} öğe</span>
+            <span class="mk">{$t("preview_title") === "Preview" ? "Content" : "İçerik"}</span>
+            <span class="mv">{duResult.file_count} {$t("items_count")}</span>
           </div>
         {/if}
       </div>
@@ -862,30 +862,30 @@
             <div class="pv-dir">
               {#if duResult?.permission_denied}
                 <span class="dir-count" style="font-size:24px; color:var(--warning)">🔒</span>
-                <span class="dir-label" style="color:var(--warning)">Okuma Yetkisi Yok</span>
+                <span class="dir-label" style="color:var(--warning)">Permission Denied</span>
                 <button
                   class="btn btn-sm btn-accent"
                   style="margin-top:10px; font-size:11px; padding:4px 10px; border-radius:6px; cursor:pointer;"
                   on:click={calculateDirWithSudo}
                   disabled={duLoading}
                 >
-                  {duLoading ? "Hesaplanıyor…" : "Root İle Boyutu Hesapla"}
+                  {duLoading ? "Calculating…" : "Calculate Size with Root"}
                 </button>
               {:else if duResult && !duResult.is_calculating && duResult.size > 0}
                 <span class="dir-count">{formatSize(duResult.size)}</span>
-                <span class="dir-label">{duResult.file_count} öğe</span>
+                <span class="dir-label">{duResult.file_count} {$t("items_count")}</span>
                 {#if duResult.from_cache}
-                  <span style="font-size:9px;color:var(--text-dim);font-style:italic">önbellekten</span>
+                  <span style="font-size:9px;color:var(--text-dim);font-style:italic">cached</span>
                 {/if}
               {:else if duLoading || (duResult && duResult.is_calculating)}
                 <span class="dir-count">{duResult?.file_count ?? preview.line_count ?? 0}</span>
                 <span class="dir-label" style="display:flex;align-items:center;gap:6px;justify-content:center">
                   <div class="spinner" style="width:12px;height:12px;border-width:2px;display:inline-block"></div>
-                  öğe (boyut taranıyor…)
+                  {$t("items_count")} ({$t("scanning")})
                 </span>
               {:else}
                 <span class="dir-count">{preview.line_count ?? 0}</span>
-                <span class="dir-label">öğe</span>
+                <span class="dir-label">{$t("items_count")}</span>
               {/if}
             </div>
 

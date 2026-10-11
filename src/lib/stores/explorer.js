@@ -492,6 +492,10 @@ conflictDirAction.subscribe(v => localStorage.setItem("conflictDirAction", v));
 // Global Çakışma İletişim Kutusu Store'u
 export const conflictDialog = writable(null);
 
+// Otomatik Crash / Hata Raporlama Store'u
+export const autoCrashReport = writable(localStorage.getItem("autoCrashReport") !== "false");
+autoCrashReport.subscribe(v => localStorage.setItem("autoCrashReport", String(v)));
+
 
 export function unlockPathWithPassword(targetPath, password) {
   sessionSudoPassword.set(password);
@@ -727,12 +731,12 @@ export function copySelected() {
     paths = [get(previewEntry).path];
   }
   if (!paths.length) {
-    notify("info", "Kopyalanacak dosya seçilmedi");
+    notify("info", "No file selected to copy");
     return;
   }
   clipboard.set({ paths, mode: "copy", op: "copy" });
   invoke("clipboard_copy", { paths }).catch(() => {});
-  notify("success", `Kopyalandı: ${paths.length} öğe`);
+  notify("success", `Copied: ${paths.length} item(s)`);
 }
 
 export function cutSelected() {
@@ -745,12 +749,12 @@ export function cutSelected() {
     paths = [get(previewEntry).path];
   }
   if (!paths.length) {
-    notify("info", "Kesilecek dosya seçilmedi");
+    notify("info", "No file selected to cut");
     return;
   }
   clipboard.set({ paths, mode: "cut", op: "cut" });
   invoke("clipboard_cut", { paths }).catch(() => {});
-  notify("info", `Kesildi: ${paths.length} öğe — yapıştırmak için Ctrl+V`);
+  notify("info", `Cut: ${paths.length} item(s) — press Ctrl+V to paste`);
 }
 
 // ---- Güvenli Çakışma Yönetimli Toplu Dosya İşlemleri ----
@@ -813,7 +817,7 @@ export async function safeBatchFileOp(sources, destDir, op = "move") {
         });
 
         if (decision === "cancel") {
-          notify("info", "İşlem iptal edildi");
+          notify("info", "Operation cancelled");
           return { success_count: 0, skipped_count: 0, failed_items: [] };
         }
         itemDecisions.set(c.src, decision);
@@ -839,7 +843,7 @@ export async function safeBatchFileOp(sources, destDir, op = "move") {
   }
 
   if (items.length === 0) {
-    notify("info", "Tüm öğeler atlandı");
+    notify("info", "All items skipped");
     return { success_count: 0, skipped_count: sources.length, failed_items: [] };
   }
 
@@ -856,8 +860,8 @@ export async function safeBatchFileOp(sources, destDir, op = "move") {
         // Sudo ile dene
         try {
           await requestSudo(
-            op === "move" ? "Taşıma İçin Yetki Gerekli" : "Kopyalama İçin Yetki Gerekli",
-            `'${firstErr[0]}' için yönetici yetkisi gerekiyor.`,
+            op === "move" ? "Move Privileges Required" : "Copy Privileges Required",
+            `Root privileges required for '${firstErr[0]}'.`,
             async (password) => {
               for (const item of items) {
                 if (op === "move") {
@@ -868,7 +872,7 @@ export async function safeBatchFileOp(sources, destDir, op = "move") {
               }
             }
           );
-          notify("success", `${items.length} öğe ${op === "move" ? "taşındı" : "kopyalandı"} (Root)`);
+          notify("success", `${items.length} item(s) ${op === "move" ? "moved" : "copied"} (Root)`);
           return {
             success_count: items.length,
             skipped_count: 0,
@@ -876,14 +880,14 @@ export async function safeBatchFileOp(sources, destDir, op = "move") {
             created_paths: items.map(it => it.dst)
           };
         } catch (sudoErr) {
-          notify("error", `İşlem başarısız: ${sudoErr}`);
+          notify("error", `Operation failed: ${sudoErr}`);
         }
       } else {
-        notify("error", `Hata (${firstErr[0]}): ${firstErr[1]}`);
+        notify("error", `Error (${firstErr[0]}): ${firstErr[1]}`);
       }
     } else {
-      const actionName = op === "move" ? "taşındı" : "kopyalandı";
-      notify("success", `${res.success_count} öğe ${actionName}`);
+      const actionName = op === "move" ? "moved" : "copied";
+      notify("success", `${res.success_count} item(s) ${actionName}`);
     }
 
     return res;
@@ -914,7 +918,7 @@ export async function pasteClipboard() {
   }
 
   if (!cb.paths || !cb.paths.length || !cb.mode) {
-    notify("info", "Pano boş (Kopyalanmış dosya yok)");
+    notify("info", "Clipboard is empty");
     return;
   }
   const op = cb.mode === "cut" ? "move" : "copy";
@@ -966,23 +970,23 @@ export async function deleteItems(paths, permanent = false) {
       if (errStr.includes("permission denied") || errStr.includes("access denied") || errStr.includes("operation not permitted")) {
         try {
           await requestSudo(
-            "Silme İçin Yetki Gerekli",
-            `'${firstErr[0]}' öğesini silmek için yönetici yetkisi gerekiyor.`,
+            "Root Privileges Required",
+            `Root privileges required to delete '${firstErr[0]}'.`,
             async (password) => {
               for (const [p] of res.failed_items) {
                 await invoke("sudo_delete_item", { path: p, permanent: true, password });
               }
             }
           );
-          notify("success", `${paths.length} öğe silindi (Root)`);
+          notify("success", `${paths.length} item(s) deleted (Root)`);
         } catch (sudoErr) {
-          notify("error", `Silinemedi: ${sudoErr}`);
+          notify("error", `Delete failed: ${sudoErr}`);
         }
       } else {
-        notify("error", `Silinemedi: ${firstErr[1]}`);
+        notify("error", `Delete failed: ${firstErr[1]}`);
       }
     } else {
-      notify("success", `${res.success_count} öğe ${permanent ? "kalıcı silindi" : "çöpe taşındı"}`);
+      notify("success", `${res.success_count} item(s) ${permanent ? "permanently deleted" : "moved to trash"}`);
     }
   } catch (e) {
     notify("error", String(e));

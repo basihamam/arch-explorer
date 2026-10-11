@@ -272,3 +272,51 @@ fn get_terminal_exec_args(terminal: &str, exec: &str) -> Vec<String> {
                   format!("{}; read -p 'Press enter...'", exec)],
     }
 }
+
+#[tauri::command]
+pub fn open_external_url(url: String) -> Result<(), String> {
+    open::that(&url).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn send_crash_report(title: String, body: String) -> Result<String, String> {
+    // Optional automatic crash report sender via GitHub Issue or curl
+    // If GitHub token or issue endpoint is configured, this can post or log directly
+    let log_dir = dirs::data_local_dir()
+        .unwrap_or_else(|| PathBuf::from("/tmp"))
+        .join("arch-explorer")
+        .join("crash-reports");
+    let _ = fs::create_dir_all(&log_dir);
+    let now = chrono::Local::now().format("%Y%m%d_%H%M%S");
+    let report_file = log_dir.join(format!("crash_{}.log", now));
+    let content = format!("Title: {}\nDate: {}\n\n{}", title, now, body);
+    fs::write(&report_file, content).map_err(|e| e.to_string())?;
+
+    // Also attempt to open pre-filled GitHub issue in browser
+    let encoded_title = urlencoding(&title);
+    let encoded_body = urlencoding(&body);
+    let issue_url = format!(
+        "https://github.com/basihamam/arch-explorer-tauri/issues/new?title={}&body={}",
+        encoded_title, encoded_body
+    );
+    let _ = open::that(&issue_url);
+
+    Ok(report_file.to_string_lossy().to_string())
+}
+
+fn urlencoding(s: &str) -> String {
+    let mut out = String::new();
+    for b in s.bytes() {
+        match b {
+            b'a'..=b'z' | b'A'..=b'Z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                out.push(b as char);
+            }
+            b' ' => out.push_str("%20"),
+            b'\n' => out.push_str("%0A"),
+            _ => {
+                out.push_str(&format!("%{:02X}", b));
+            }
+        }
+    }
+    out
+}

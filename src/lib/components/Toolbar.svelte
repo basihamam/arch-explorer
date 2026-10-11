@@ -179,7 +179,7 @@
           if (e.target === e.currentTarget) editingPath = true;
         }}
         on:dblclick={() => editingPath = true}
-        title="Yolu düzenlemek için çift tıklayın (Ctrl+L)"
+        title="Double-click to edit path (Ctrl+L)"
       >
         <!-- Root -->
         <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -206,7 +206,7 @@
           <!-- svelte-ignore a11y-no-static-element-interactions -->
           <span
             class="crumb collapsed-ellipsis"
-            title="Yolu göster (veya Ctrl+L)"
+            title="Expand path (or Ctrl+L)"
             on:click|stopPropagation={() => editingPath = true}
           >..</span>
           <span class="crumb-sep">/</span>

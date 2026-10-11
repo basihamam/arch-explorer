@@ -500,7 +500,7 @@
       {#if targetIsArchive}
         <button class="ctx-item ctx-primary-action" on:click={extract}>
           <span class="ctx-icon">📦</span>
-          <span class="ctx-label">Buraya Çıkar (Extract Here)</span>
+          <span class="ctx-label">Extract Here</span>
         </button>
       {/if}
 
@@ -521,7 +521,7 @@
         >
           <button class="ctx-item" on:click={toggleOwPinned}>
             <span class="ctx-icon">▶</span>
-            <span class="ctx-label">Birlikte Aç (Open With)</span>
+            <span class="ctx-label">Open With</span>
             <span class="ctx-arrow">›</span>
           </button>
 
@@ -538,7 +538,7 @@
               <div class="ctx-ow-loading"><div class="ctx-ow-spinner"></div></div>
             {:else if owApps}
               {#if owApps.default_app}
-                <div class="ctx-ow-label">Varsayılan Uygulama</div>
+                <div class="ctx-ow-label">Default Application</div>
                 <button class="ctx-item ctx-ow-item is-default" on:click={() => quickOpenWith(owApps.default_app)}>
                   {#if owIconSrc(owApps.default_app)}
                     <img class="ctx-ow-icon" src={owIconSrc(owApps.default_app)} alt="" on:error={e=>e.target.style.display="none"} />
@@ -549,7 +549,7 @@
               {/if}
               {#if owApps.recommended && owApps.recommended.length > 0}
                 {#if owApps.default_app}<div class="ctx-sep"></div>{/if}
-                <div class="ctx-ow-label">Önerilen Uygulamalar</div>
+                <div class="ctx-ow-label">Recommended Applications</div>
                 {#each owApps.recommended as app (app.id)}
                   <button class="ctx-item ctx-ow-item" on:click={() => quickOpenWith(app)}>
                     {#if owIconSrc(app)}
@@ -562,12 +562,12 @@
               <div class="ctx-sep"></div>
               <button class="ctx-item" on:click={openWith}>
                 <span class="ctx-icon">⊞</span>
-                <span class="ctx-ow-name">Tüm Uygulamalar…</span>
+                <span class="ctx-ow-name">All Applications…</span>
               </button>
             {:else}
               <button class="ctx-item" on:click={openWith}>
                 <span class="ctx-icon">⊞</span>
-                <span class="ctx-ow-name">Uygulama Seç…</span>
+                <span class="ctx-ow-name">Select Application…</span>
               </button>
             {/if}
             </div>
@@ -620,7 +620,7 @@
 
       <div class="ctx-sep"></div>
 
-      <!-- ── MORE OPTIONS / DİĞER SEÇENEKLER (Secondary Tools & Commands) ── -->
+      <!-- ── MORE OPTIONS / SECONDARY COMMANDS ── -->
       <div
         class="ctx-submenu-wrap"
         on:mouseenter={showMoreSubmenu}
@@ -628,7 +628,7 @@
       >
         <button class="ctx-item more-item" on:click={toggleMorePinned}>
           <span class="ctx-icon">⋯</span>
-          <span class="ctx-label">Diğer Seçenekler</span>
+          <span class="ctx-label">More Options</span>
           <span class="ctx-arrow">›</span>
         </button>
 
@@ -697,7 +697,7 @@
 
       <button class="ctx-item" on:click={() => openProperties(target.path)}>
         <span class="ctx-icon">ⓘ</span>
-        <span class="ctx-label">Özellikler</span>
+        <span class="ctx-label">Properties</span>
         <span class="ctx-shortcut">Alt+Enter</span>
       </button>
 
@@ -739,7 +739,7 @@
       >
         <button class="ctx-item more-item" on:click={toggleMorePinned}>
           <span class="ctx-icon">⋯</span>
-          <span class="ctx-label">Diğer Seçenekler</span>
+          <span class="ctx-label">More Options</span>
           <span class="ctx-arrow">›</span>
         </button>
 
@@ -776,7 +776,7 @@
 
       <button class="ctx-item" on:click={() => openProperties($currentPath)}>
         <span class="ctx-icon">ⓘ</span>
-        <span class="ctx-label">Klasör Özellikleri</span>
+        <span class="ctx-label">Folder Properties</span>
         <span class="ctx-shortcut">Alt+Enter</span>
       </button>
     {/if}

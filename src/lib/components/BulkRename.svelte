@@ -97,12 +97,12 @@
 
   // Hazır pattern şablonları
   const TEMPLATES = [
-    { label: "Sayısal sıra",  value: "{n}{ext}" },
-    { label: "Ad + sıra",     value: "{name}_{n}{ext}" },
-    { label: "Tarih + sıra",  value: "{date}_{n}{ext}" },
-    { label: "Büyük harf",    value: "{upper}{ext}" },
-    { label: "Küçük harf",    value: "{lower}{ext}" },
-    { label: "Tarih + ad",    value: "{date}_{name}{ext}" },
+    { label: "Numeric sequence", value: "{n}{ext}" },
+    { label: "Name + sequence",  value: "{name}_{n}{ext}" },
+    { label: "Date + sequence",  value: "{date}_{n}{ext}" },
+    { label: "Uppercase",        value: "{upper}{ext}" },
+    { label: "Lowercase",        value: "{lower}{ext}" },
+    { label: "Date + name",      value: "{date}_{name}{ext}" },
   ];
 </script>
 
@@ -110,7 +110,7 @@
   <div class="panel glass">
 
     <div class="panel-header">
-      <span>Toplu Yeniden Adlandır — {files.length} dosya</span>
+      <span>Bulk Rename — {files.length} items</span>
       <button on:click={() => dispatch("close")}>✕</button>
     </div>
 
@@ -123,35 +123,35 @@
           <input class="ctrl-input mono" bind:value={pattern} placeholder="{name}{ext}" />
         </div>
         <div class="ctrl-row">
-          <label class="ctrl-label">Başlangıç sayısı</label>
+          <label class="ctrl-label">Start number</label>
           <input class="ctrl-input" type="number" bind:value={startNum} min="0" style="width:80px" />
-          <label class="ctrl-label" style="margin-left:12px">Pad uzunluğu</label>
-          <input class="ctrl-input" type="number" bind:value={padLen} min="0" max="6" style="width:60px" title="0=kapalı, 2=01 02, 3=001 002"/>
+          <label class="ctrl-label" style="margin-left:12px">Pad length</label>
+          <input class="ctrl-input" type="number" bind:value={padLen} min="0" max="6" style="width:60px" title="0=off, 2=01 02, 3=001 002"/>
         </div>
 
-        <!-- Şablonlar -->
+        <!-- Templates -->
         <div class="templates">
           {#each TEMPLATES as tmpl}
             <button class="tmpl-btn" on:click={() => pattern = tmpl.value}>{tmpl.label}</button>
           {/each}
         </div>
 
-        <!-- Token referans -->
+        <!-- Token reference -->
         <div class="tokens">
-          <span class="token">{"{name}"} isim</span>
-          <span class="token">{"{ext}"} uzantı</span>
-          <span class="token">{"{n}"} sayı</span>
-          <span class="token">{"{date}"} tarih</span>
-          <span class="token">{"{upper}"} BÜYÜK</span>
-          <span class="token">{"{lower}"} küçük</span>
+          <span class="token">{"{name}"} name</span>
+          <span class="token">{"{ext}"} extension</span>
+          <span class="token">{"{n}"} number</span>
+          <span class="token">{"{date}"} date</span>
+          <span class="token">{"{upper}"} UPPER</span>
+          <span class="token">{"{lower}"} lower</span>
         </div>
       </div>
 
-      <!-- Preview tablosu -->
+      <!-- Preview table -->
       <div class="preview-wrap">
         <div class="preview-header">
-          <span>Önce</span>
-          <span>Sonra</span>
+          <span>Before</span>
+          <span>After</span>
         </div>
         <div class="preview-list">
           {#each preview as p}
@@ -159,7 +159,7 @@
               <span class="col-old" title={p.path}>{p.original}</span>
               <span class="arrow">→</span>
               <span class="col-new">{p.renamed}</span>
-              {#if p.conflict}<span class="badge-conflict">çakışma</span>{/if}
+              {#if p.conflict}<span class="badge-conflict">conflict</span>{/if}
             </div>
           {/each}
         </div>
@@ -175,16 +175,16 @@
 
     <div class="panel-footer">
       <span class="footer-info">
-        {preview.filter(p => p.original !== p.renamed).length} değişecek
-        {#if hasConflict}<span class="warn">· çakışma var!</span>{/if}
+        {preview.filter(p => p.original !== p.renamed).length} will change
+        {#if hasConflict}<span class="warn">· conflict detected!</span>{/if}
       </span>
-      <button class="btn" on:click={() => dispatch("close")}>İptal</button>
+      <button class="btn" on:click={() => dispatch("close")}>Cancel</button>
       <button
         class="btn btn-accent"
         on:click={doRename}
         disabled={busy || hasConflict || !hasChange}
       >
-        {busy ? "Yeniden adlandırılıyor..." : "Uygula"}
+        {busy ? "Renaming..." : "Apply"}
       </button>
     </div>
 

@@ -64,7 +64,7 @@ const SHORTCUTS = [
         action: async () => {
             const paths = getSelected();
             if (!paths.length) return;
-            if (confirm(`Seçili ${paths.length} öğeyi kalıcı olarak silmek istediğinize emin misiniz?`)) {
+            if (confirm(`Are you sure you want to permanently delete ${paths.length} selected item(s)?`)) {
                 await deleteItems(paths, true);
             }
         },
@@ -76,7 +76,7 @@ const SHORTCUTS = [
     {
         key: "F7", ctrl: false, shift: false, alt: false, id: "new-folder",
         action: async () => {
-            const name = prompt("Klasör adı:");
+            const name = prompt("Folder name:");
             if (!name) return;
             const path = `${get(currentPath)}/${name}`;
             await invoke("tracked_create_dir", { path });

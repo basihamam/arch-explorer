@@ -1,7 +1,7 @@
 // i18n.js — Turkish (tr) and English (en) localization engine for Arch Explorer
 import { writable, derived } from "svelte/store";
 
-export const currentLocale = writable(localStorage.getItem("appLocale") || "tr");
+export const currentLocale = writable(localStorage.getItem("appLocale") || "en");
 currentLocale.subscribe(l => localStorage.setItem("appLocale", l));
 
 export function setLocale(lang) {

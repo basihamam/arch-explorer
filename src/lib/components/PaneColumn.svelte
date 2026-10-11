@@ -22,6 +22,7 @@
     toggleSort, setFolderSort,
   } from "../stores/explorer.js";
   import { get } from "svelte/store";
+  import { t } from "../i18n.js";
 
   const dispatch = createEventDispatcher();
 
@@ -1066,9 +1067,9 @@
     if (!entry.is_dir) return formatSize(entry.size);
     if (entry.size > 0) return formatSize(entry.size);
     if (entry.children_count !== undefined && entry.children_count !== null) {
-      return `${entry.children_count} öğe`;
+      return `${entry.children_count} ${$t("items_count")}`;
     }
-    return "0 öğe";
+    return `0 ${$t("items_count")}`;
   }
 
   const TYPE_COLORS = {
@@ -1295,15 +1296,15 @@
         <div class="pane-list-header">
           <!-- svelte-ignore a11y-no-static-element-interactions -->
           <span class="pane-col-name" style="cursor:pointer" on:click={() => toggleSort("name")}>
-            Ad {#if $sortBy === "name"}<span style="color:var(--accent); font-size:9px">{$sortAsc ? "▲" : "▼"}</span>{/if}
+            {$t("name")} {#if $sortBy === "name"}<span style="color:var(--accent); font-size:9px">{$sortAsc ? "▲" : "▼"}</span>{/if}
           </span>
           <!-- svelte-ignore a11y-no-static-element-interactions -->
           <span class="pane-col-size" style="cursor:pointer" on:click={() => toggleSort("size")}>
-            Boyut {#if $sortBy === "size"}<span style="color:var(--accent); font-size:9px">{$sortAsc ? "▲" : "▼"}</span>{/if}
+            {$t("size")} {#if $sortBy === "size"}<span style="color:var(--accent); font-size:9px">{$sortAsc ? "▲" : "▼"}</span>{/if}
           </span>
           <!-- svelte-ignore a11y-no-static-element-interactions -->
           <span class="pane-col-date" style="cursor:pointer" on:click={() => toggleSort("modified")}>
-            Değiştirildi {#if $sortBy === "modified" || $sortBy === "date"}<span style="color:var(--accent); font-size:9px">{$sortAsc ? "▲" : "▼"}</span>{/if}
+            {$t("modified")} {#if $sortBy === "modified" || $sortBy === "date"}<span style="color:var(--accent); font-size:9px">{$sortAsc ? "▲" : "▼"}</span>{/if}
           </span>
         </div>
         {#each renderedEntries as entry (entry.path)}

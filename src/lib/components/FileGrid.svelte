@@ -61,9 +61,9 @@
     if (!entry.is_dir) return formatSize(entry.size);
     if (entry.size > 0) return formatSize(entry.size);
     if (entry.children_count !== undefined && entry.children_count !== null) {
-      return `${entry.children_count} öğe`;
+      return `${entry.children_count} ${$t("items_count")}`;
     }
-    return "0 öğe";
+    return `0 ${$t("items_count")}`;
   }
 
   // ── Git badge renkleri ──

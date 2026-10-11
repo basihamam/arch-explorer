@@ -70,7 +70,7 @@
         <div class="title-wrap">
           <span class="warning-icon">⚠</span>
           <span class="title-text">
-            {currentConflict.is_dir ? "Klasör Zaten Mevcut" : "Dosya Zaten Mevcut"}
+            {currentConflict.is_dir ? "Folder Already Exists" : "File Already Exists"}
           </span>
         </div>
         {#if totalConflicts > 1}
@@ -82,7 +82,7 @@
 
       <div class="conflict-body">
         <p class="conflict-intro">
-          Hedef dizinde aynı isimde bir {currentConflict.is_dir ? "klasör" : "dosya"} zaten var:
+          A {currentConflict.is_dir ? "folder" : "file"} with the same name already exists in the destination:
         </p>
 
         <div class="conflict-name-box">
@@ -94,40 +94,40 @@
         <div class="compare-grid">
           <!-- Kaynak (gelen yeni dosya) -->
           <div class="compare-card source">
-            <div class="card-label">GELEN ({$conflictDialog.op === "move" ? "Taşınan" : "Kopyalanan"})</div>
+            <div class="card-label">INCOMING ({$conflictDialog.op === "move" ? "Moving" : "Copying"})</div>
             <div class="thumb-container">
               {#if srcThumb}
-                <img src={srcThumb} alt="Gelen Thumbnail" class="file-thumb-img" />
+                <img src={srcThumb} alt="Incoming Thumbnail" class="file-thumb-img" />
               {:else}
                 <div class="file-thumb-placeholder">{getFileIcon(currentConflict.name, currentConflict.is_dir)}</div>
               {/if}
             </div>
             <div class="card-prop">
-              <span class="prop-k">Boyut:</span>
+              <span class="prop-k">Size:</span>
               <span class="prop-v">{formatBytes(currentConflict.src_size)}</span>
             </div>
             <div class="card-prop">
-              <span class="prop-k">Tarih:</span>
+              <span class="prop-k">Date:</span>
               <span class="prop-v">{currentConflict.src_modified || "—"}</span>
             </div>
           </div>
 
           <!-- Hedef (mevcut olan dosya) -->
           <div class="compare-card dest">
-            <div class="card-label">HEDEFTEKİ (Mevcut)</div>
+            <div class="card-label">EXISTING (Destination)</div>
             <div class="thumb-container">
               {#if dstThumb}
-                <img src={dstThumb} alt="Mevcut Thumbnail" class="file-thumb-img" />
+                <img src={dstThumb} alt="Destination Thumbnail" class="file-thumb-img" />
               {:else}
                 <div class="file-thumb-placeholder">{getFileIcon(currentConflict.name, currentConflict.is_dir)}</div>
               {/if}
             </div>
             <div class="card-prop">
-              <span class="prop-k">Boyut:</span>
+              <span class="prop-k">Size:</span>
               <span class="prop-v">{formatBytes(currentConflict.dst_size)}</span>
             </div>
             <div class="card-prop">
-              <span class="prop-k">Tarih:</span>
+              <span class="prop-k">Date:</span>
               <span class="prop-v">{currentConflict.dst_modified || "—"}</span>
             </div>
           </div>
@@ -136,29 +136,29 @@
         <div class="backup-note">
           <span class="note-icon">🛡️</span>
           <span>
-            <strong>Güvenli Üzerine Yazma:</strong> Üzerine yazılan dosya silinmez; Ctrl+Z için güvenli yedekleme alanında saklanır!
+            <strong>Safe Overwrite:</strong> Overwritten items are safely kept in backup for Ctrl+Z undo!
           </span>
         </div>
 
         <label class="apply-all-label">
           <input type="checkbox" bind:checked={applyToAll} />
-          <span>{totalConflicts > 1 ? `Kalan tüm ${totalConflicts - currentIndex} çakışma için bu kararı uygula` : "Tüm çakışmalar için bunu uygula"}</span>
+          <span>{totalConflicts > 1 ? `Apply to all remaining ${totalConflicts - currentIndex} conflicts` : "Apply to all conflicts"}</span>
         </label>
       </div>
 
       <!-- Eşit genişlikte, yan yana 4 buton -->
       <div class="conflict-actions">
         <button class="btn btn-cancel" on:click={() => chooseAction("cancel")}>
-          İptal
+          Cancel
         </button>
         <button class="btn btn-skip" on:click={() => chooseAction("skip")}>
-          Atla
+          Skip
         </button>
         <button class="btn btn-rename" on:click={() => chooseAction("rename")}>
-          İkisini Koru
+          Keep Both
         </button>
         <button class="btn btn-replace" on:click={() => chooseAction("replace")}>
-          Üzerine Yaz
+          Overwrite
         </button>
       </div>
     </div>

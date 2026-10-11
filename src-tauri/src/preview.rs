@@ -89,7 +89,7 @@ fn get_adb_file_preview(path: &str) -> Result<FilePreview, String> {
             mime_type: if is_video_ext && !mime.starts_with("video/") { format!("video/{}", ext) } else { mime },
             size,
             image_b64: None,
-            text_content: Some("Telefon üzerindeki video — Oynatmak için çift tıklayın".into()),
+            text_content: Some("Video on phone — Double-click to open".into()),
             media_info: None,
             line_count: None,
             is_truncated: false,
@@ -103,7 +103,7 @@ fn get_adb_file_preview(path: &str) -> Result<FilePreview, String> {
             mime_type: mime,
             size,
             image_b64: None,
-            text_content: Some("Telefon üzerindeki ses dosyası — Dinlemek için çift tıklayın".into()),
+            text_content: Some("Audio on phone — Double-click to open".into()),
             media_info: None,
             line_count: None,
             is_truncated: false,
@@ -116,7 +116,7 @@ fn get_adb_file_preview(path: &str) -> Result<FilePreview, String> {
     let is_text = lang.is_some() || mime.starts_with("text/") || mime.contains("json") || mime.contains("javascript") || mime.contains("xml");
 
     if is_text {
-        let (serial, remote) = crate::adb::parse_adb_path(path).ok_or_else(|| "Geçersiz ADB yolu".to_string())?;
+        let (serial, remote) = crate::adb::parse_adb_path(path).ok_or_else(|| "Invalid ADB path".to_string())?;
         let escaped = remote.replace('\'', "'\\''");
         let out = Command::new("adb")
             .args(["-s", &serial, "shell", &format!("head -n 200 '{}'", escaped)])

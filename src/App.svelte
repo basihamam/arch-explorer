@@ -34,7 +34,7 @@
     sudoDialog, openWithDialog, adminMode, alwaysLaunchSudo, sessionSudoPassword, requestSudo, notify,
     selectedPaths, rightSelectedPaths, rightEntries, displayEntries, openEntry,
     copySelected, cutSelected, pasteClipboard, selectAll, deleteItems, rightPaneNavRequest, renamingPath,
-    setFolderViewMode,
+    setFolderViewMode, autoCrashReport,
   } from "./lib/stores/explorer.js";
 
   let globalPasswordInput = "";
@@ -143,8 +143,47 @@
 
   let _unlistenDir = null;
   let _refreshTimer = null;
+  let _lastReportedError = "";
+
+  function handleAppCrash(title, errorDetail) {
+    if (!get(autoCrashReport)) return;
+    const errKey = `${title}:${errorDetail}`;
+    if (_lastReportedError === errKey) return;
+    _lastReportedError = errKey;
+
+    const reportBody = `### Arch Explorer Crash / Error Telemetry
+- **OS**: Arch Linux
+- **Current Path**: ${get(currentPath)}
+- **Timestamp**: ${new Date().toISOString()}
+
+#### Error Details
+\`\`\`
+${errorDetail}
+\`\`\`
+`;
+
+    invoke("send_crash_report", { title: `[Auto-Crash] ${title}`, body: reportBody })
+      .then((path) => {
+        notify("info", `Crash report generated and saved: ${path}`);
+      })
+      .catch((e) => console.error("Telemetry failed:", e));
+  }
 
   onMount(() => {
+    // Global Error & Promise Rejection Handlers for Crash Telemetry
+    const onGlobalError = (event) => {
+      const msg = event.message || "Unknown Application Error";
+      const stack = event.error?.stack || `${event.filename}:${event.lineno}:${event.colno}`;
+      handleAppCrash(msg, stack);
+    };
+    const onUnhandledRejection = (event) => {
+      const reason = event.reason?.stack || event.reason?.message || String(event.reason);
+      handleAppCrash("Unhandled Promise Rejection", reason);
+    };
+
+    window.addEventListener("error", onGlobalError);
+    window.addEventListener("unhandledrejection", onUnhandledRejection);
+
     // 1. Klavye kısayollarını HEMEN en başta kaydet — hiçbir async işlem bunu geciktiremez!
     window.addEventListener("keydown", handleKey, { capture: true });
 
@@ -476,7 +515,7 @@
         <input
           class="pw-input"
           type="password"
-          placeholder="Sudo / Root Şifresi"
+          placeholder="Sudo / Root Password"
           bind:value={globalPasswordInput}
           bind:this={globalPasswordInputEl}
           on:keydown={e => e.key === "Enter" && submitGlobalPassword()}
@@ -486,9 +525,9 @@
           <div class="pw-err">{globalPasswordError}</div>
         {/if}
         <div class="pw-actions">
-          <button class="btn" on:click={$sudoDialog.onCancel} disabled={globalPasswordBusy}>İptal</button>
+          <button class="btn" on:click={$sudoDialog.onCancel} disabled={globalPasswordBusy}>Cancel</button>
           <button class="btn btn-accent" on:click={submitGlobalPassword} disabled={globalPasswordBusy || !globalPasswordInput}>
-            {globalPasswordBusy ? "Onaylanıyor…" : "Tamam"}
+            {globalPasswordBusy ? "Authenticating…" : "Confirm"}
           </button>
         </div>
       </div>

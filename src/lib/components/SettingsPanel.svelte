@@ -5,7 +5,8 @@
     theme, opacity, panelOpacity, blurAmount, accentColor, tabBarMode, autoReload, notify,
     previewMode, previewCustomTypes, thumbnailMode, thumbnailMinSize, gridZoom,
     adminMode, alwaysLaunchSudo, sessionSudoPassword, requestSudo,
-    bookmarkIconsEnabled, videoHoverScrubbing, conflictFileAction, conflictDirAction
+    bookmarkIconsEnabled, videoHoverScrubbing, conflictFileAction, conflictDirAction,
+    autoCrashReport
   } from "../stores/explorer.js";
   import { t, currentLocale, setLocale } from "../i18n.js";
 
@@ -67,7 +68,31 @@
       notify("info", "Her açılışta sudo ile başlatma kapatıldı");
     }
   }
-  let activeTab = "appearance"; // "appearance" | "layout" | "behavior" | "admin" | "advanced"
+  async function openUrl(url) {
+    try {
+      await invoke("open_external_url", { url });
+    } catch (e) {
+      window.open(url, "_blank");
+    }
+  }
+
+  async function reportBug() {
+    openUrl("https://github.com/basihamam/arch-explorer-tauri/issues/new?title=Bug%20Report&body=Describe%20the%20issue%20here...");
+  }
+
+  async function sendTestCrashReport() {
+    try {
+      const res = await invoke("send_crash_report", {
+        title: "User Test Diagnostics Report",
+        body: `Arch Explorer Diagnostic Ping\nTime: ${new Date().toISOString()}\nPlatform: Arch Linux GTK WebKit`
+      });
+      notify("success", `Report generated: ${res}`);
+    } catch (e) {
+      notify("error", String(e));
+    }
+  }
+
+  let activeTab = "appearance"; // "appearance" | "layout" | "behavior" | "admin" | "advanced" | "about"
 </script>
 
 <div class="overlay" on:click|self={() => dispatch("close")}>
@@ -84,6 +109,7 @@
       <button class="tab-btn" class:active={activeTab === "behavior"} on:click={() => activeTab = "behavior"}>{$t("settings") === "Settings" ? "Behavior" : "Davranış"}</button>
       <button class="tab-btn" class:active={activeTab === "admin"} on:click={() => activeTab = "admin"}>{$t("settings") === "Settings" ? "Admin" : "Yönetici"}</button>
       <button class="tab-btn" class:active={activeTab === "advanced"} on:click={() => activeTab = "advanced"}>{$t("settings") === "Settings" ? "Advanced" : "Gelişmiş"}</button>
+      <button class="tab-btn" class:active={activeTab === "about"} on:click={() => activeTab = "about"}>{$t("settings") === "Settings" ? "About & Feedback" : "Hakkında & İletişim"}</button>
     </div>
 
     <div class="settings-body">
@@ -494,9 +520,66 @@
         </section>
 
         <section class="setting-group">
-          <label class="group-label">Sistem Bilgisi</label>
+          <label class="group-label">System Information</label>
           <p class="hint">
             Linux Arch Linux GTK WebKit · Tauri 2.0 Native Shell Integration · Zero-Allocation Engine
+          </p>
+        </section>
+      {/if}
+
+      <!-- ================= TAB: HAKKINDA / ABOUT ================= -->
+      {#if activeTab === "about"}
+        <!-- Developer & Contact -->
+        <section class="setting-group">
+          <label class="group-label">Developer & Community</label>
+          <div style="background:var(--bg-tertiary); border:1px solid var(--border); border-radius:var(--radius-md); padding:14px; display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <div>
+                <div style="font-weight:700; font-size:14px; color:var(--text-primary)">LordBlue / ALX</div>
+                <div style="font-size:11px; color:var(--accent); font-family:var(--font-mono)">@basihamam</div>
+              </div>
+              <button class="btn btn-accent" on:click={() => openUrl("https://github.com/basihamam")}>
+                ★ GitHub Profile
+              </button>
+            </div>
+            <p class="hint">
+              Arch Explorer is built with passion for the Arch Linux ecosystem. For questions, feature requests, or direct contact, check out the official GitHub page:
+            </p>
+            <div style="display:flex; gap:8px; flex-wrap:wrap">
+              <button class="btn" style="flex:1" on:click={() => openUrl("https://github.com/basihamam/arch-explorer-tauri")}>
+                📂 GitHub Repository
+              </button>
+              <button class="btn" style="flex:1" on:click={reportBug}>
+                💬 Submit Feedback / Issues
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Crash & Error Reporting -->
+        <section class="setting-group">
+          <label class="group-label">Crash & Error Telemetry</label>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px">
+            <span style="font-weight:600; font-size:13px">Automatic Crash Reports</span>
+            <div class="toggle-row">
+              <button class="toggle-btn" class:active={$autoCrashReport} on:click={() => autoCrashReport.set(true)}>Enabled</button>
+              <button class="toggle-btn" class:active={!$autoCrashReport} on:click={() => autoCrashReport.set(false)}>Disabled</button>
+            </div>
+          </div>
+          <p class="hint">
+            When an unexpected error or UI crash happens, Arch Explorer automatically generates a clean crash diagnostic report and opens an issue template so the developer (@basihamam) can investigate and fix it instantly.
+          </p>
+          <div style="margin-top:6px">
+            <button class="btn" on:click={sendTestCrashReport}>
+              ⚡ Send Test Diagnostic Report
+            </button>
+          </div>
+        </section>
+
+        <section class="setting-group">
+          <label class="group-label">Version</label>
+          <p class="hint mono">
+            Arch Explorer v0.1.0 (x86_64 Linux) · Open Source Community Edition
           </p>
         </section>
       {/if}

@@ -89,6 +89,8 @@ pub fn run() {
             commands::run_user_command,
             commands::save_user_command,
             commands::delete_user_command,
+            commands::open_external_url,
+            commands::send_crash_report,
             // Clipboard + Undo + Safe Batch Ops
             clipboard::clipboard_copy,
             clipboard::clipboard_cut,

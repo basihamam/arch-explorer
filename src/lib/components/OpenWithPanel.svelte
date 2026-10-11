@@ -27,10 +27,10 @@
   });
 
   $: allSections = !info ? [] : [
-    ...(info.default_app ? [{ __section: "Varsayılan (Default)" }, info.default_app] : []),
-    ...(info.recommended.length ? [{ __section: "Önerilen Uygulamalar (Recommended)" }, ...info.recommended] : []),
-    ...(info.others.length ? [{ __section: "Diğer Uygulamalar" }, ...info.others] : []),
-    ...(info.custom.length ? [{ __section: "Özel Komutlar & Betikler" }, ...info.custom] : []),
+    ...(info.default_app ? [{ __section: "Default" }, info.default_app] : []),
+    ...(info.recommended.length ? [{ __section: "Recommended Applications" }, ...info.recommended] : []),
+    ...(info.others.length ? [{ __section: "Other Applications" }, ...info.others] : []),
+    ...(info.custom.length ? [{ __section: "Custom Commands & Scripts" }, ...info.custom] : []),
   ];
 
   $: filtered = allSections.filter(item =>
@@ -132,7 +132,7 @@
     <!-- Search -->
     <div class="ow-search-wrap">
       <span class="ow-search-icon">◎</span>
-      <input class="ow-search" placeholder="Uygulama ara…" bind:value={searchQ} autofocus />
+      <input class="ow-search" placeholder="Search apps…" bind:value={searchQ} autofocus />
     </div>
 
     <!-- Single unified list -->
@@ -179,27 +179,27 @@
           {/if}
         {/each}
         {#if !loading && filtered.filter(i => !i.__section).length === 0}
-          <div class="ow-state">Uygulama bulunamadı</div>
+          <div class="ow-state">No application found</div>
         {/if}
       {/if}
     </div>
 
     <!-- Custom cmd -->
     <div class="ow-custom-box">
-      <span class="ow-custom-hint">Ya da doğrudan bir executable / komut:</span>
+      <span class="ow-custom-hint">Or run an executable command directly:</span>
       <div class="ow-custom-row">
-        <input type="text" class="ow-custom-input" placeholder="Executable veya komut…" bind:value={customCmd} />
+        <input type="text" class="ow-custom-input" placeholder="Executable or command…" bind:value={customCmd} />
         <button class="ow-browse-btn" on:click={browseExecutable}>📁</button>
       </div>
     </div>
 
     <!-- Footer -->
     <div class="ow-footer">
-      <button class="btn-ghost danger" on:click={resetDefaults}>↺ Sistem Varsayılanı</button>
+      <button class="btn-ghost danger" on:click={resetDefaults}>↺ Reset to System Default</button>
       <div class="ow-footer-right">
-        <button class="btn-ghost" on:click={() => dispatch("close")}>İptal</button>
-        <button class="btn-secondary" on:click={setDefault} disabled={!selected}>★ Varsayılan Yap</button>
-        <button class="btn-primary" on:click={openOnce} disabled={!selected && !customCmd.trim()}>▶ Aç</button>
+        <button class="btn-ghost" on:click={() => dispatch("close")}>Cancel</button>
+        <button class="btn-secondary" on:click={setDefault} disabled={!selected}>★ Set as Default</button>
+        <button class="btn-primary" on:click={openOnce} disabled={!selected && !customCmd.trim()}>▶ Open</button>
       </div>
     </div>
   </div>

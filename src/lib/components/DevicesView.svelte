@@ -136,7 +136,7 @@
 
   <div class="dv-header">
     <span class="dv-title">◉ Devices</span>
-    <span class="dv-sub">Bir diske çift tıkla → içine gir · Sağ tıkla → disk işlemleri</span>
+    <span class="dv-sub">Double-click a drive to browse · Right-click for disk actions</span>
   </div>
 
   <div class="disk-grid">
@@ -181,17 +181,17 @@
             <span class="usage-detail">{formatSize(usage.used)} / {formatSize(usage.total)}</span>
           </div>
           <div class="usage-avail">
-            <span class="avail-label">Boş</span>
+            <span class="avail-label">Free</span>
             <span class="avail-val">{formatSize(usage.avail)}</span>
           </div>
         {:else if !dev.is_mounted}
-          <div class="unmounted-hint">○ Unmounted — çift tıkla mount et</div>
+          <div class="unmounted-hint">○ Unmounted — double-click to mount</div>
         {/if}
       </div>
     {/each}
 
     {#if sortedDevices.length === 0}
-      <div class="no-disk">◫ Disk bulunamadı</div>
+      <div class="no-disk">◫ No disks found</div>
     {/if}
   </div>
 </div>
@@ -211,43 +211,43 @@
 
     {#if deviceMenu.dev.is_mounted}
       <button class="ctx-item" on:click={() => openDisk(deviceMenu.dev)}>
-        <span class="ctx-icon">▶</span> Aç
+        <span class="ctx-icon">▶</span> Open
       </button>
       <button class="ctx-item" on:click={() => unmountDisk(deviceMenu.dev)}>
         <span class="ctx-icon">⏏</span> Unmount
       </button>
     {:else}
       <button class="ctx-item" on:click={() => mountDisk(deviceMenu.dev)}>
-        <span class="ctx-icon">⊕</span> Mount Et
+        <span class="ctx-icon">⊕</span> Mount
       </button>
     {/if}
     <div class="ctx-sep"></div>
 
-    <button class="ctx-item" on:click={() => stubAction("Biçimlendir")}>
-      <span class="ctx-icon">◫</span> Biçimlendir
-      <span class="ctx-badge">yakında</span>
+    <button class="ctx-item" on:click={() => stubAction("Format")}>
+      <span class="ctx-icon">◫</span> Format
+      <span class="ctx-badge">soon</span>
     </button>
-    <button class="ctx-item" on:click={() => stubAction("Yedekle")}>
-      <span class="ctx-icon">◈</span> Yedekle (dd/rsync)
-      <span class="ctx-badge">yakında</span>
+    <button class="ctx-item" on:click={() => stubAction("Backup")}>
+      <span class="ctx-icon">◈</span> Backup (dd/rsync)
+      <span class="ctx-badge">soon</span>
     </button>
-    <button class="ctx-item" on:click={() => stubAction("Sıkıştır")}>
-      <span class="ctx-icon">🗜</span> Sıkıştır
-      <span class="ctx-badge">yakında</span>
+    <button class="ctx-item" on:click={() => stubAction("Compress")}>
+      <span class="ctx-icon">🗜</span> Compress
+      <span class="ctx-badge">soon</span>
     </button>
 
     {#if deviceMenu.dev.fs_type === "btrfs"}
       <div class="ctx-sep"></div>
-      <button class="ctx-item" on:click={() => stubAction("BTRFS sıkıştırma")}>
-        <span class="ctx-icon">⚙</span> BTRFS Sıkıştırma Formatı
-        <span class="ctx-badge">yakında</span>
+      <button class="ctx-item" on:click={() => stubAction("BTRFS compression")}>
+        <span class="ctx-icon">⚙</span> BTRFS Compression
+        <span class="ctx-badge">soon</span>
       </button>
     {/if}
 
     <div class="ctx-sep"></div>
-    <button class="ctx-item" on:click={() => stubAction("Sıfırla")}>
+    <button class="ctx-item" on:click={() => stubAction("Wipe")}>
       <span class="ctx-icon danger-icon">⚠</span>
-      <span style="color:var(--danger)">Sıfırla (wipe)</span>
+      <span style="color:var(--danger)">Wipe Drive</span>
       <span class="ctx-badge">yakında</span>
     </button>
   </div>

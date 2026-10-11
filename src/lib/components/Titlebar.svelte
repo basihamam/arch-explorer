@@ -32,7 +32,7 @@
       </svg>
       Disks
     </button>
-    <button class="tb-btn" title="Ağ Paylaşımları" on:click={() => dispatch("network")}>
+    <button class="tb-btn" title="Network Shares" on:click={() => dispatch("network")}>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/>
         <path d="M12 8v4M12 12l-5 4M12 12l5 4"/>

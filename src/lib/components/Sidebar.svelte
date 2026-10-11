@@ -431,7 +431,7 @@
           <button
             class="add-btn hidden-badge-btn"
             on:click={() => showHiddenDevs = !showHiddenDevs}
-            title={showHiddenDevs ? "Gizlileri Kapat" : `${$hiddenDevices.length} Gizli Disk (Görmek için tıkla)`}
+            title={showHiddenDevs ? "Hide hidden drives" : `${$hiddenDevices.length} Hidden Drives (Click to view)`}
           >
             {showHiddenDevs ? "👁" : "👁‍🗨"}
           </button>
@@ -480,12 +480,12 @@
           <span class="item-label">
             {devLabel(dev)}
             {#if $hiddenDevices.includes(dev.device)}
-              <span class="hidden-pill">gizli</span>
+              <span class="hidden-pill">hidden</span>
             {/if}
           </span>
           <span class="dev-sub">{dev.size} · {dev.fs_type}{!dev.is_mounted ? " · click to mount" : ""}</span>
         </div>
-        <span class="drag-handle-hint dev-drag-hint" title="Sürükle sırala / Sağ tıkla">⋮⋮</span>
+        <span class="drag-handle-hint dev-drag-hint" title="Drag to reorder / Right click">⋮⋮</span>
       </div>
     {/each}
 
