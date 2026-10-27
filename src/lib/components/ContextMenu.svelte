@@ -530,6 +530,32 @@
       <div class="ctx-label truncate" title={target.path}>{target.name}</div>
       <div class="ctx-sep"></div>
 
+      <!-- Çöp kutusundayken ek 2 eylem: Geri Yükle & Kalıcı Sil -->
+      {#if inTrash}
+        <button
+          class="ctx-item"
+          on:click={restoreItems}
+          on:mouseup={(e) => { if (e.button === 2) restoreItems(); }}
+          on:contextmenu|preventDefault|stopPropagation={restoreItems}
+        >
+          <span class="ctx-icon">⤺</span>
+          <span class="ctx-label">{multiSelect ? "Geri Yükle (Seçili)" : "Geri Yükle"}</span>
+        </button>
+        <button
+          class="ctx-item danger"
+          on:click={deletePerma}
+          on:mouseup={(e) => { if (e.button === 2) deletePerma(); }}
+          on:contextmenu|preventDefault|stopPropagation={deletePerma}
+        >
+          <span class="ctx-icon">✕</span>
+          <span class="ctx-label">Kalıcı Olarak Sil</span>
+          <span class="ctx-shortcut">Del</span>
+        </button>
+        <div class="ctx-sep"></div>
+      {/if}
+      <div class="ctx-label truncate" title={target.path}>{target.name}</div>
+      <div class="ctx-sep"></div>
+
       <!-- ── PRIMARY COMMANDS (Windows 11 Style) ── -->
       {#if targetIsArchive}
         <button class="ctx-item ctx-primary-action" on:click={extract}>
@@ -650,8 +676,8 @@
         <span class="ctx-label">Rename</span>
         <span class="ctx-shortcut">F2</span>
       </button>
-      {#if !inTrash}
-        <button
+
+      <button
           class="ctx-item"
           on:click={newFolder}
           on:mouseup={(e) => { if (e.button === 2) newFolder(); }}
@@ -692,48 +718,6 @@
           <span class="ctx-label">Delete Permanently</span>
           <span class="ctx-shortcut">Shift+Del</span>
         </button>
-      {:else}
-        {#if target || selectedList.length > 0}
-          <button
-            class="ctx-item"
-            on:click={restoreItems}
-            on:mouseup={(e) => { if (e.button === 2) restoreItems(); }}
-            on:contextmenu|preventDefault|stopPropagation={restoreItems}
-          >
-            <span class="ctx-icon">⤺</span>
-            <span class="ctx-label">{multiSelect ? "Restore Selected Items" : "Restore Item"}</span>
-          </button>
-          <button
-            class="ctx-item danger"
-            on:click={deletePerma}
-            on:mouseup={(e) => { if (e.button === 2) deletePerma(); }}
-            on:contextmenu|preventDefault|stopPropagation={deletePerma}
-          >
-            <span class="ctx-icon">✕</span>
-            <span class="ctx-label">Delete Permanently</span>
-            <span class="ctx-shortcut">Del</span>
-          </button>
-          <div class="ctx-sep"></div>
-        {/if}
-        <button
-          class="ctx-item"
-          on:click={restoreAll}
-          on:mouseup={(e) => { if (e.button === 2) restoreAll(); }}
-          on:contextmenu|preventDefault|stopPropagation={restoreAll}
-        >
-          <span class="ctx-icon">⤺</span>
-          <span class="ctx-label">Restore All Items</span>
-        </button>
-        <button
-          class="ctx-item danger"
-          on:click={emptyTrash}
-          on:mouseup={(e) => { if (e.button === 2) emptyTrash(); }}
-          on:contextmenu|preventDefault|stopPropagation={emptyTrash}
-        >
-          <span class="ctx-icon">🗑</span>
-          <span class="ctx-label">Empty Trash</span>
-        </button>
-      {/if}
 
       <div class="ctx-sep"></div>
 
@@ -820,8 +804,32 @@
 
     {:else}
       <!-- Background right-click -->
-      <div class="ctx-label">This Folder</div>
+      <div class="ctx-label">{inTrash ? "Çöp Kutusu (Trash)" : "This Folder"}</div>
       <div class="ctx-sep"></div>
+
+      <!-- Çöp kutusu boş alandayken ek 2 eylem: Tümünü Geri Yükle & Çöpü Boşalt -->
+      {#if inTrash}
+        <button
+          class="ctx-item"
+          on:click={restoreAll}
+          on:mouseup={(e) => { if (e.button === 2) restoreAll(); }}
+          on:contextmenu|preventDefault|stopPropagation={restoreAll}
+        >
+          <span class="ctx-icon">⤺</span>
+          <span class="ctx-label">Tümünü Geri Yükle</span>
+        </button>
+        <button
+          class="ctx-item danger"
+          on:click={emptyTrash}
+          on:mouseup={(e) => { if (e.button === 2) emptyTrash(); }}
+          on:contextmenu|preventDefault|stopPropagation={emptyTrash}
+        >
+          <span class="ctx-icon">🗑</span>
+          <span class="ctx-label">Çöpü Boşalt</span>
+        </button>
+        <div class="ctx-sep"></div>
+      {/if}
+
       <button class="ctx-item" on:click={newFolder}>
         <span class="ctx-icon">📁</span>
         <span class="ctx-label">New Folder</span>

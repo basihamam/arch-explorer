@@ -386,11 +386,42 @@
     };
   });
 
+  // Eğer aktif öğenin modified tarihi boşsa (örneğin mevcut klasör önizlenirken), hemen stat bilgisini çek
+  $: if (activeEntry && !activeEntry.modified && activeEntry.path) {
+    const curPath = activeEntry.path.replace(/\/+$/, "") || "/";
+    invoke("get_file_info", { path: curPath })
+      .then(info => {
+        if (activeEntry && (activeEntry.path === curPath || activeEntry.path.replace(/\/+$/, "") === curPath) && info) {
+          activeEntry = {
+            ...activeEntry,
+            modified: info.modified || activeEntry.modified,
+            created: info.created || activeEntry.created,
+            permissions: info.permissions || activeEntry.permissions,
+          };
+        }
+      })
+      .catch(() => {});
+  }
+
   async function loadDirPreview(rawPath) {
     const path = rawPath.replace(/\/+$/, "") || "/";
-    loading = true;
+    loading = false;
     error = null;
     preview = null;
+
+    invoke("get_file_info", { path })
+      .then(info => {
+        const curNorm = activeEntry?.path?.replace(/\/+$/, "") || "/";
+        if (curNorm === path && info) {
+          activeEntry = {
+            ...activeEntry,
+            modified: info.modified || activeEntry.modified,
+            created: info.created || activeEntry.created,
+            permissions: info.permissions || activeEntry.permissions,
+          };
+        }
+      })
+      .catch(() => {});
 
     // Eğer bu klasörün boyutu az önce hesaplandıysa veya hafızadaysa hemen göster, dönen çark çıkarma!
     if (dirSizeClientCache.has(path)) {
@@ -408,12 +439,15 @@
     // 1. Önce anında dosya önizlemesini yükle (hızlı)
     try {
       const res = await invoke("get_file_preview", { path });
-      if (lastPreviewPath !== path) return;
-      preview = res;
+      const curNorm = activeEntry?.path?.replace(/\/+$/, "") || "/";
+      if (curNorm === path) {
+        preview = res;
+      }
     } catch (e) {
-      if (lastPreviewPath === path) error = String(e);
+      const curNorm = activeEntry?.path?.replace(/\/+$/, "") || "/";
+      if (curNorm === path) error = String(e);
     } finally {
-      if (lastPreviewPath === path) loading = false;
+      loading = false;
     }
 
     // ADB dizinlerinde yerel du komutu çalıştırılamaz
@@ -469,6 +503,8 @@
           } else {
             duLoading = false;
           }
+        } else {
+          duLoading = false;
         }
       } catch (e) {
         clearDuPoll();
@@ -667,7 +703,7 @@
           {#if activeEntry.is_dir}
             {#if duResult?.permission_denied}
               <span class="mv" style="color:var(--warning)">🔒 Yetki Gerekli</span>
-            {:else if duResult && !duResult.is_calculating && duResult.size > 0}
+            {:else if duResult && !duResult.is_calculating}
               <span class="mv">{formatSize(duResult.size)}</span>
             {:else if duLoading || (duResult && duResult.is_calculating)}
               <span class="mv" style="color:var(--accent)">Hesaplanıyor…</span>
@@ -871,20 +907,14 @@
                 >
                   {duLoading ? "Calculating…" : "Calculate Size with Root"}
                 </button>
-              {:else if duResult && !duResult.is_calculating && duResult.size > 0}
+              {:else if duResult && !duResult.is_calculating}
                 <span class="dir-count">{formatSize(duResult.size)}</span>
                 <span class="dir-label">{duResult.file_count} {$t("items_count")}</span>
                 {#if duResult.from_cache}
                   <span style="font-size:9px;color:var(--text-dim);font-style:italic">cached</span>
                 {/if}
-              {:else if duLoading || (duResult && duResult.is_calculating)}
-                <span class="dir-count">{duResult?.file_count ?? preview.line_count ?? 0}</span>
-                <span class="dir-label" style="display:flex;align-items:center;gap:6px;justify-content:center">
-                  <div class="spinner" style="width:12px;height:12px;border-width:2px;display:inline-block"></div>
-                  {$t("items_count")} ({$t("scanning")})
-                </span>
               {:else}
-                <span class="dir-count">{preview.line_count ?? 0}</span>
+                <span class="dir-count">{duResult?.file_count ?? preview.line_count ?? 0}</span>
                 <span class="dir-label">{$t("items_count")}</span>
               {/if}
             </div>

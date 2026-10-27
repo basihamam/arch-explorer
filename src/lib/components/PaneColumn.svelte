@@ -1222,31 +1222,7 @@
     on:dragover|preventDefault
     on:drop={onDropBg}
   >
-    {#if inTrash}
-      <!-- svelte-ignore a11y-no-static-element-interactions -->
-      <div class="trash-banner glass" on:click|stopPropagation>
-        <div class="trash-info">
-          <span class="trash-icon">🗑️</span>
-          <span class="trash-title">Çöp Kutusu — {displayEntries.length}</span>
-        </div>
-        <div class="trash-actions">
-          {#if selectedPaths.size > 0}
-            <button class="trash-btn restore" on:click={ctxRestore}>
-              <span>⤺</span> Seçiliyi Geri Yükle ({selectedPaths.size})
-            </button>
-            <button class="trash-btn delete" on:click={() => ctxDelete(true)}>
-              <span>✕</span> Kalıcı Sil
-            </button>
-          {/if}
-          <button class="trash-btn restore" on:click={async () => { await restoreAllTrashItems(); await loadDir(currentPath); }}>
-            <span>⤺</span> Tümünü Geri Yükle
-          </button>
-          <button class="trash-btn purge" on:click={async () => { await emptyTrashNow(); await loadDir(currentPath); }}>
-            <span>🗑</span> Çöpü Boşalt
-          </button>
-        </div>
-      </div>
-    {/if}
+
 
     <!-- Selection rectangle -->
     {#if selRect && (selRect.w > 4 || selRect.h > 4)}
@@ -1903,82 +1879,4 @@
     animation: fadeIn 0.15s ease-out;
   }
 
-  /* Trash Banner & Action Bar */
-  .trash-banner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 6px 12px;
-    margin: 4px 4px 8px 4px;
-    background: rgba(30, 20, 35, 0.75);
-    border: 1px solid rgba(255, 80, 100, 0.25);
-    border-radius: var(--radius, 8px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-    flex-shrink: 0;
-    z-index: 10;
-  }
-  .trash-info {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .trash-icon {
-    font-size: 15px;
-  }
-  .trash-title {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-primary, #fff);
-  }
-  .trash-actions {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-  .trash-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 10px;
-    border-radius: var(--radius-sm, 6px);
-    font-size: 11px;
-    font-weight: 500;
-    cursor: pointer;
-    border: 1px solid transparent;
-    transition: all 0.15s ease;
-    font-family: inherit;
-    white-space: nowrap;
-  }
-  .trash-btn.restore {
-    background: rgba(130, 100, 255, 0.2);
-    border-color: rgba(130, 100, 255, 0.4);
-    color: #e0d8ff;
-  }
-  .trash-btn.restore:hover {
-    background: rgba(130, 100, 255, 0.35);
-    border-color: #8264ff;
-    color: #fff;
-  }
-  .trash-btn.delete {
-    background: rgba(255, 60, 60, 0.15);
-    border-color: rgba(255, 60, 60, 0.35);
-    color: #ff9999;
-  }
-  .trash-btn.delete:hover {
-    background: rgba(255, 60, 60, 0.3);
-    border-color: #ff5555;
-    color: #fff;
-  }
-  .trash-btn.purge {
-    background: rgba(220, 40, 40, 0.2);
-    border-color: rgba(220, 40, 40, 0.45);
-    color: #ffb0b0;
-  }
-  .trash-btn.purge:hover {
-    background: rgba(220, 40, 40, 0.4);
-    border-color: #ff4444;
-    color: #fff;
-  }
 </style>
