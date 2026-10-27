@@ -107,6 +107,9 @@ pub fn run() {
             clipboard::check_file_conflicts,
             clipboard::execute_file_batch,
             clipboard::batch_delete,
+            clipboard::restore_trash_items,
+            clipboard::restore_all_trash,
+            clipboard::empty_trash,
             // Watcher (inotify)
             watcher::start_watching,
             watcher::stop_watching,

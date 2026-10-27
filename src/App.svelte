@@ -34,7 +34,7 @@
     sudoDialog, openWithDialog, adminMode, alwaysLaunchSudo, sessionSudoPassword, requestSudo, notify,
     selectedPaths, rightSelectedPaths, rightEntries, displayEntries, openEntry,
     copySelected, cutSelected, pasteClipboard, selectAll, deleteItems, rightPaneNavRequest, renamingPath,
-    setFolderViewMode, autoCrashReport,
+    setFolderViewMode, autoCrashReport, isTrashPath,
   } from "./lib/stores/explorer.js";
 
   let globalPasswordInput = "";
@@ -357,7 +357,15 @@ ${errorDetail}
       let sel = isRight ? [...$rightSelectedPaths] : [...$selectedPaths];
       if (!sel.length) sel = [...$selectedPaths, ...$rightSelectedPaths];
       if (!sel.length && $previewEntry?.path) sel = [$previewEntry.path];
-      if (sel.length) deleteItems(sel, false);
+      if (sel.length) {
+        if (isTrashPath($currentPath)) {
+          if (confirm(`Permanently delete ${sel.length} item(s) from Trash? / Seçili ${sel.length} öğe çöp kutusundan kalıcı olarak silinsin mi?`)) {
+            deleteItems(sel, true);
+          }
+        } else {
+          deleteItems(sel, false);
+        }
+      }
       return;
     }
     if (isDel && shift) {
@@ -365,7 +373,7 @@ ${errorDetail}
       let sel = isRight ? [...$rightSelectedPaths] : [...$selectedPaths];
       if (!sel.length) sel = [...$selectedPaths, ...$rightSelectedPaths];
       if (!sel.length && $previewEntry?.path) sel = [$previewEntry.path];
-      if (sel.length && confirm(`Permanently delete ${sel.length} item(s)?`)) {
+      if (sel.length && confirm(`Permanently delete ${sel.length} item(s)? / Seçili ${sel.length} öğe kalıcı olarak silinsin mi?`)) {
         deleteItems(sel, true);
       }
       return;

@@ -1004,6 +1004,47 @@ export async function deleteItems(paths, permanent = false) {
   }
 }
 
+// ---- Çöp Kutusu (Trash) İşlemleri ----
+export function isTrashPath(p) {
+  if (!p) return false;
+  return p.includes(".local/share/Trash") || p.startsWith("trash:") || p === "Trash";
+}
+
+export async function restoreTrashPaths(paths) {
+  if (!paths || !paths.length) return;
+  try {
+    const count = await invoke("restore_trash_items", { paths });
+    notify("success", `${count} item(s) restored from Trash`);
+    await loadDirectory(get(currentPath));
+    rightPaneNavRequest.set({ type: "refresh" });
+  } catch (e) {
+    notify("error", `Restore failed: ${e}`);
+  }
+}
+
+export async function restoreAllTrashItems() {
+  try {
+    const count = await invoke("restore_all_trash");
+    notify("success", `${count} item(s) restored from Trash`);
+    await loadDirectory(get(currentPath));
+    rightPaneNavRequest.set({ type: "refresh" });
+  } catch (e) {
+    notify("error", `Restore failed: ${e}`);
+  }
+}
+
+export async function emptyTrashNow() {
+  if (!confirm("Permanently delete all items in Trash? / Çöp kutusundaki tüm öğeler kalıcı olarak silinsin mi?")) return;
+  try {
+    const count = await invoke("empty_trash");
+    notify("success", `Trash emptied (${count} items purged)`);
+    await loadDirectory(get(currentPath));
+    rightPaneNavRequest.set({ type: "refresh" });
+  } catch (e) {
+    notify("error", `Empty trash failed: ${e}`);
+  }
+}
+
 // ---- Search ----
 export async function searchFiles(query) {
   if (!query.trim()) { searchResults.set([]); return; }

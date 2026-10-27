@@ -1021,7 +1021,9 @@
     line-height: 1.55;
     color: var(--text-secondary, rgba(255,255,255,0.6));
     overflow: auto;
-    white-space: pre;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
     background: var(--bg-tertiary, rgba(30,30,40,0.9));
   }
 

@@ -5,7 +5,8 @@
            copySelected, cutSelected, pasteClipboard,
            clipboard, addBookmark,
            previewEntry, showPreview, addTab,
-           entries, renamingPath, requestSudo } from "../stores/explorer.js";
+           entries, renamingPath, requestSudo,
+           isTrashPath, restoreTrashPaths, restoreAllTrashItems, emptyTrashNow } from "../stores/explorer.js";
   import { invoke, convertFileSrc } from "@tauri-apps/api/core";
   import { onMount, createEventDispatcher } from "svelte";
   import OpenWithPanel from "./OpenWithPanel.svelte";
@@ -160,6 +161,7 @@
   $: hasClipboard    = $clipboard.paths.length > 0;
   $: contextCmds     = $userCommands.filter(c => c.show_in_context_menu);
   $: multiSelect     = selectedList.length > 1;
+  $: inTrash         = isTrashPath($currentPath) || isTrashPath(target?.path);
   $: targetIsArchive = target && !target.is_dir &&
        /\.(zip|tar\.gz|tgz|tar\.bz2|tbz2|tar\.xz|txz|tar\.zst|tar|7z|rar)$/i.test(target.name);
 
@@ -311,6 +313,22 @@
   async function trash() {
     const paths = selectedList.length ? selectedList : [target?.path].filter(Boolean);
     await deleteItems(paths, false);
+    contextMenu.set(null);
+  }
+
+  async function restoreItems() {
+    const paths = selectedList.length ? selectedList : [target?.path].filter(Boolean);
+    await restoreTrashPaths(paths);
+    contextMenu.set(null);
+  }
+
+  async function restoreAll() {
+    await restoreAllTrashItems();
+    contextMenu.set(null);
+  }
+
+  async function emptyTrash() {
+    await emptyTrashNow();
     contextMenu.set(null);
   }
 
@@ -632,47 +650,90 @@
         <span class="ctx-label">Rename</span>
         <span class="ctx-shortcut">F2</span>
       </button>
-      <button
-        class="ctx-item"
-        on:click={newFolder}
-        on:mouseup={(e) => { if (e.button === 2) newFolder(); }}
-        on:contextmenu|preventDefault|stopPropagation={newFolder}
-      >
-        <span class="ctx-icon">📁</span>
-        <span class="ctx-label">New Folder</span>
-      </button>
-      <button
-        class="ctx-item"
-        on:click={newFile}
-        on:mouseup={(e) => { if (e.button === 2) newFile(); }}
-        on:contextmenu|preventDefault|stopPropagation={newFile}
-      >
-        <span class="ctx-icon">📄</span>
-        <span class="ctx-label">New File Here</span>
-      </button>
+      {#if !inTrash}
+        <button
+          class="ctx-item"
+          on:click={newFolder}
+          on:mouseup={(e) => { if (e.button === 2) newFolder(); }}
+          on:contextmenu|preventDefault|stopPropagation={newFolder}
+        >
+          <span class="ctx-icon">📁</span>
+          <span class="ctx-label">New Folder</span>
+        </button>
+        <button
+          class="ctx-item"
+          on:click={newFile}
+          on:mouseup={(e) => { if (e.button === 2) newFile(); }}
+          on:contextmenu|preventDefault|stopPropagation={newFile}
+        >
+          <span class="ctx-icon">📄</span>
+          <span class="ctx-label">New File Here</span>
+        </button>
 
-      <div class="ctx-sep"></div>
+        <div class="ctx-sep"></div>
 
-      <button
-        class="ctx-item"
-        on:click={trash}
-        on:mouseup={(e) => { if (e.button === 2) trash(); }}
-        on:contextmenu|preventDefault|stopPropagation={trash}
-      >
-        <span class="ctx-icon">🗑</span>
-        <span class="ctx-label">Move to Trash</span>
-        <span class="ctx-shortcut">Del</span>
-      </button>
-      <button
-        class="ctx-item danger"
-        on:click={deletePerma}
-        on:mouseup={(e) => { if (e.button === 2) deletePerma(); }}
-        on:contextmenu|preventDefault|stopPropagation={deletePerma}
-      >
-        <span class="ctx-icon">✕</span>
-        <span class="ctx-label">Delete Permanently</span>
-        <span class="ctx-shortcut">Shift+Del</span>
-      </button>
+        <button
+          class="ctx-item"
+          on:click={trash}
+          on:mouseup={(e) => { if (e.button === 2) trash(); }}
+          on:contextmenu|preventDefault|stopPropagation={trash}
+        >
+          <span class="ctx-icon">🗑</span>
+          <span class="ctx-label">Move to Trash</span>
+          <span class="ctx-shortcut">Del</span>
+        </button>
+        <button
+          class="ctx-item danger"
+          on:click={deletePerma}
+          on:mouseup={(e) => { if (e.button === 2) deletePerma(); }}
+          on:contextmenu|preventDefault|stopPropagation={deletePerma}
+        >
+          <span class="ctx-icon">✕</span>
+          <span class="ctx-label">Delete Permanently</span>
+          <span class="ctx-shortcut">Shift+Del</span>
+        </button>
+      {:else}
+        {#if target || selectedList.length > 0}
+          <button
+            class="ctx-item"
+            on:click={restoreItems}
+            on:mouseup={(e) => { if (e.button === 2) restoreItems(); }}
+            on:contextmenu|preventDefault|stopPropagation={restoreItems}
+          >
+            <span class="ctx-icon">⤺</span>
+            <span class="ctx-label">{multiSelect ? "Restore Selected Items" : "Restore Item"}</span>
+          </button>
+          <button
+            class="ctx-item danger"
+            on:click={deletePerma}
+            on:mouseup={(e) => { if (e.button === 2) deletePerma(); }}
+            on:contextmenu|preventDefault|stopPropagation={deletePerma}
+          >
+            <span class="ctx-icon">✕</span>
+            <span class="ctx-label">Delete Permanently</span>
+            <span class="ctx-shortcut">Del</span>
+          </button>
+          <div class="ctx-sep"></div>
+        {/if}
+        <button
+          class="ctx-item"
+          on:click={restoreAll}
+          on:mouseup={(e) => { if (e.button === 2) restoreAll(); }}
+          on:contextmenu|preventDefault|stopPropagation={restoreAll}
+        >
+          <span class="ctx-icon">⤺</span>
+          <span class="ctx-label">Restore All Items</span>
+        </button>
+        <button
+          class="ctx-item danger"
+          on:click={emptyTrash}
+          on:mouseup={(e) => { if (e.button === 2) emptyTrash(); }}
+          on:contextmenu|preventDefault|stopPropagation={emptyTrash}
+        >
+          <span class="ctx-icon">🗑</span>
+          <span class="ctx-label">Empty Trash</span>
+        </button>
+      {/if}
 
       <div class="ctx-sep"></div>
 

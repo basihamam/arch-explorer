@@ -870,11 +870,28 @@ pub fn undo_last() -> Result<String, String> {
                 }
             }
             "delete" => {
-                // trash-restore kuruluysa geri getirmeyi dene
-                let _ = std::process::Command::new("trash-restore")
-                    .stdin(std::process::Stdio::null())
-                    .output();
-                restored_count += 1;
+                if let Some(ref orig_path) = item.src {
+                    if let Ok(trash_items) = trash::os_limited::list() {
+                        let orig_name = Path::new(orig_path)
+                            .file_name()
+                            .unwrap_or_default()
+                            .to_string_lossy()
+                            .to_string();
+                        let mut matching: Vec<_> = trash_items
+                            .into_iter()
+                            .filter(|ti| {
+                                ti.original_path().to_string_lossy() == orig_path.as_str()
+                                    || ti.name == orig_name
+                            })
+                            .collect();
+                        matching.sort_by_key(|ti| std::cmp::Reverse(ti.time_deleted));
+                        if let Some(to_restore) = matching.into_iter().next() {
+                            if trash::os_limited::restore_all(vec![to_restore]).is_ok() {
+                                restored_count += 1;
+                            }
+                        }
+                    }
+                }
             }
             _ => {}
         }
@@ -1042,4 +1059,61 @@ pub fn move_item_inner(src: &Path, dst: &Path) -> Result<()> {
         fs::remove_file(src)?;
     }
     Ok(())
+}
+
+// ---- Çöp Kutusu (Trash) Yönetimi ----
+
+#[tauri::command]
+pub fn restore_trash_items(paths: Vec<String>) -> Result<usize, String> {
+    let all_items = trash::os_limited::list().map_err(|e| e.to_string())?;
+    let path_names: Vec<String> = paths.iter().map(|p| {
+        Path::new(p).file_name().unwrap_or_default().to_string_lossy().to_string()
+    }).collect();
+
+    let mut to_restore = vec![];
+    for item in all_items {
+        let matches = paths.iter().any(|p| p == &item.id.to_string_lossy().to_string() || p.ends_with(&format!("/{}", item.name)))
+            || path_names.iter().any(|name| name == &item.name);
+        if matches {
+            to_restore.push(item);
+        }
+    }
+
+    if to_restore.is_empty() {
+        return Err("Geri yüklenecek çöp öğesi bulunamadı".to_string());
+    }
+
+    let count = to_restore.len();
+    trash::os_limited::restore_all(to_restore).map_err(|e| e.to_string())?;
+    Ok(count)
+}
+
+#[tauri::command]
+pub fn restore_all_trash() -> Result<usize, String> {
+    let all_items = trash::os_limited::list().map_err(|e| e.to_string())?;
+    let count = all_items.len();
+    if count == 0 {
+        return Ok(0);
+    }
+    trash::os_limited::restore_all(all_items).map_err(|e| e.to_string())?;
+    Ok(count)
+}
+
+#[tauri::command]
+pub fn empty_trash() -> Result<usize, String> {
+    let all_items = trash::os_limited::list().map_err(|e| e.to_string())?;
+    let count = all_items.len();
+    let _ = trash::os_limited::purge_all(all_items);
+
+    // Also ensure disk trash directories are cleaned
+    if let Some(home) = dirs::home_dir() {
+        let files_dir = home.join(".local/share/Trash/files");
+        let info_dir = home.join(".local/share/Trash/info");
+        let _ = fs::remove_dir_all(&files_dir);
+        let _ = fs::create_dir_all(&files_dir);
+        let _ = fs::remove_dir_all(&info_dir);
+        let _ = fs::create_dir_all(&info_dir);
+    }
+
+    Ok(count)
 }
