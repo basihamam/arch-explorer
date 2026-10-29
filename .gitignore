@@ -1,5 +1,19 @@
+# Ignore development source and build artifacts on main
+src/
+src-tauri/
 node_modules/
 dist/
-src-tauri/target/
+target/
+package.json
+package-lock.json
+vite.config.js
+svelte.config.js
+index.html
+scripts/
+files/
+aur-arch-explorer-bin/
+bin/
+*.zip
+*.jpg
+square.png
 .DS_Store
-*.log

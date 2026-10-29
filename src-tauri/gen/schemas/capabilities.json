@@ -1,1 +1,0 @@
-{"default":{"identifier":"default","description":"Default permissions for Arch Explorer","local":true,"windows":["main"],"permissions":["core:default","core:event:default","core:event:allow-listen","core:event:allow-unlisten","core:event:allow-emit","shell:default","fs:default","dialog:default","notification:default"]}}
