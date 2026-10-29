@@ -5,92 +5,96 @@
 </p>
 
 <p align="center">
-  <strong>Blazing fast, ultra-lightweight, transparent glassmorphism file manager designed for Arch Linux.</strong><br>
-  Built with Rust + Tauri 2.0 + Svelte · Zero-lag · True Desktop Wallpaper Transparency
+  <strong>Modern, transparent glassmorphism file manager for Arch Linux.</strong><br>
+  Instant Launch · Zero Setup · True Desktop Wallpaper Transparency · Built-in ADB Android Support
 </p>
 
 ---
 
-## ⚡ Direct Download & Quick Launch (No Dev Setup Needed!)
+## 🚀 İndir ve Doğrudan Çalıştır (Hemen Kullan!)
 
-You don't need to build from source or install Node/Rust! The standalone binary and native Arch package are included directly:
+Bu repoda derleme veya kod karmaşası yok! Doğrudan çalışan uygulama ve Arch Linux paketi hazır olarak yer almaktadır:
 
-### 1. Direct Instant Run:
+### 1. Doğrudan Çalıştır (Tek Komut):
 ```bash
 git clone https://github.com/basihamam/arch-explorer-tauri.git
 cd arch-explorer-tauri
-./bin/arch-explorer
+./arch-explorer
 ```
+*(veya `./arch-explorer` dosyasına çift tıklayarak anında başlatabilirsiniz!)*
 
-### 2. Native Arch Linux Install (pacman):
+### 2. Sisteme Kurmak İsterseniz:
 ```bash
-sudo pacman -U bin/arch-explorer-bin-0.1.0-1-x86_64.pkg.tar.zst
+# Kurulum betiği ile:
+sudo ./install.sh
+
+# Veya pacman paketi ile:
+sudo pacman -U arch-explorer-bin-0.1.0-1-x86_64.pkg.tar.zst
 ```
 
 ---
 
-## 📸 Transparency & Visual Showcase
+## 📸 Arayüz & Transparan Cam Vitrini
 
-### Glassmorphism & Desktop Transparency
-Arch Explorer lets your wallpaper and system theme shine through with hardware-accelerated blur and customizable opacity sliders.
+### Saydam Masaüstü & Akrilik Bulanıklık
+Arch Explorer arkasındaki duvar kağıdını ve masaüstü pencerelerini tül gibi gösterir. Donanım hızlandırmalı blur ve özel opaklık ayarlarıyla tamamen kişiselleştirilebilir.
 
 <p align="center">
-  <img src="docs/screenshots/01_arch_explorer_main_transparent.png" alt="Main Window Transparency" width="88%">
+  <img src="docs/screenshots/01_arch_explorer_main_transparent.png" alt="Ana Pencere Saydamlığı" width="88%">
 </p>
 
-### Settings & Theme Customization
-Live theme presets, accent color picker, interface blur (0–40px), and background opacity controls.
+### Canlı Tema ve Ayarlar Paneli
+8 adet hazır tema, renk seçici, arayüz bulanıklığı (0–40px) ve panel şeffaflığı.
 
 <p align="center">
-  <img src="docs/screenshots/02_settings_appearance_transparent.png" alt="Settings & Glass Blur" width="88%">
+  <img src="docs/screenshots/02_settings_appearance_transparent.png" alt="Ayarlar ve Saydam Blur" width="88%">
 </p>
 
-### Layout & Folder Preview Controls
-Configurable preview modes (Always, Automatic, Manual, Custom) and one-click toggle for Folder Previews.
+### Yerleşim & Klasör Önizleme Kontrolleri
+İster her zaman açık, ister sadece dosyalarda veya otomatik. Klasörler için önizleme tek tıkla açılıp kapatılabilir.
 
 <p align="center">
-  <img src="docs/screenshots/04_settings_layout_folder_preview.png" alt="Layout & Folder Preview Controls" width="88%">
+  <img src="docs/screenshots/04_settings_layout_folder_preview.png" alt="Klasör Önizleme Ayarları" width="88%">
 </p>
 
-### Clean Context Menu & Trash Management
-Quick actions, archive extraction, checksum verification, open-with manager, and trash restore.
+### Saydam Sağ Tık ve Çöp Kutusu Yönetimi
+Tek tıkla arşiv çıkarma, SHA256/MD5 sağlama toplamı, çöp kutusundan tekli veya toplu geri yükleme.
 
 <p align="center">
-  <img src="docs/screenshots/05_context_menu_transparent.png" alt="Transparent Context Menu" width="88%">
+  <img src="docs/screenshots/05_context_menu_transparent.png" alt="Saydam Bağlam Menüsü" width="88%">
 </p>
 
 ---
 
-## ✨ Key Features
+## ✨ Öne Çıkan Özellikler
 
-- **True Wallpaper Transparency & Blur:** Custom backdrop filters, acrylic transparency, and real-time blur adjustments.
-- **Full Bilingual Localization:** Complete English (`en`) and Turkish (`tr`) support with dynamic, instant switching.
-- **Smart Preview Panel:** Persistent file preview mode with configurable folder size calculation and background disk analysis.
-- **Dual-Pane Support (Ctrl+P):** Two fully independent file panes for fast side-by-side transfers and comparisons.
-- **Native Android / ADB Integration:** Connect any Android device via USB to browse, push, pull, and stream files.
-- **Safe Undo & Conflict Management:** Overwritten files are automatically snapshotted; press `Ctrl+Z` to undo file operations.
-- **Custom User Commands:** Add custom shell scripts and tools directly to the right-click menu via `~/.config/arch-explorer/commands.toml`.
-- **Zero-Allocation Memory Manager:** Built-in Virtual Chunking, DU cache, and single-click RAM/cache cleanup for massive directories.
+- **Masaüstü Şeffaflığı:** Gerçek saydamlık ve canlı blur filtresi.
+- **%100 İki Dilli (TR & EN):** Türkçe ve İngilizce arasında sayfa yenilemeden anlık geçiş.
+- **Akıllı Önizleme:** F3 ile açılan, klasör boyutlarını ve disk kullanımını analiz eden önizleme paneli.
+- **Çift Panel (Ctrl+P):** Yan yana iki bağımsız klasör paneli ile hızlı dosya yönetimi.
+- **Yerleşik Android / ADB Entegrasyonu:** USB ile bağlı telefonları sürücü gibi listeler ve dosyaları doğrudan yönetir.
+- **Güvenli Geri Alma (Ctrl+Z):** Yanlışlıkla yapılan veya üzerine yazılan dosyalar güvenle kurtarılır.
+- **Sıfır Bellek Şişmesi:** Dev boyutlu klasörlerde sanal pencerelenme (Virtual Chunking) ve tek tıkla RAM temizliği.
 
 ---
 
-## ⌨️ Shortcuts & Hotkeys
+## ⌨️ Temel Kısayollar
 
-| Shortcut | Action |
+| Kısayol | İşlev |
 |---|---|
-| `Alt + ←` / `Alt + →` | Back / Forward |
-| `Alt + ↑` | Navigate to Parent Directory |
-| `F3` | Toggle Preview Panel |
-| `F5` | Refresh Directory |
-| `Ctrl + P` | Toggle Dual-Pane View |
-| `Ctrl + T` | Open Terminal at Current Folder |
-| `Ctrl + Z` | Undo Last File Operation |
-| `Alt + Enter` | View Properties & Permissions |
+| `Alt + ←` / `Alt + →` | Geri / İleri |
+| `Alt + ↑` | Üst Klasöre Git |
+| `F3` | Önizleme Panelini Aç / Kapat |
+| `F5` | Klasörü Yenile |
+| `Ctrl + P` | Çift Panel (Dual Pane) |
+| `Ctrl + T` | Klasörde Terminal Aç |
+| `Ctrl + Z` | Son İşlemi Geri Al |
+| `Alt + Enter` | Dosya / Klasör Özellikleri & İzinleri |
 
 ---
 
-## 👤 Author & Community
+## 👤 Geliştirici & İletişim
 
-- **Creator:** LordBlue / ALX ([@basihamam](https://github.com/basihamam))
-- **Repository:** [basihamam/arch-explorer-tauri](https://github.com/basihamam/arch-explorer-tauri)
-- **License:** Open Source Community Edition
+- **Geliştirici:** LordBlue / ALX ([@basihamam](https://github.com/basihamam))
+- **Depo:** [basihamam/arch-explorer-tauri](https://github.com/basihamam/arch-explorer-tauri)
+- **Sürüm:** 0.1v (Open Source Community Edition)
