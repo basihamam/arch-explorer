@@ -1,4 +1,4 @@
-# ◈ Arch Explorer 0.1v
+# ◈ Arch Explorer 0.2v
 
 <p align="center">
   <img src="docs/screenshots/arch_explorer_multiselection_transparent.gif" alt="Arch Explorer Transparent Demo" width="90%">
@@ -29,7 +29,7 @@ cd arch-explorer-tauri
 sudo ./install.sh
 
 # Veya pacman paketi ile:
-sudo pacman -U arch-explorer-bin-0.1.0-1-x86_64.pkg.tar.zst
+sudo pacman -U arch-explorer-bin-0.2.0-1-x86_64.pkg.tar.zst
 ```
 
 ---
@@ -97,4 +97,4 @@ Tek tıkla arşiv çıkarma, SHA256/MD5 sağlama toplamı, çöp kutusundan tekl
 
 - **Geliştirici:** LordBlue / ALX ([@basihamam](https://github.com/basihamam))
 - **Depo:** [basihamam/arch-explorer-tauri](https://github.com/basihamam/arch-explorer-tauri)
-- **Sürüm:** 0.1v (Open Source Community Edition)
+- **Sürüm:** 0.2v (Open Source Community Edition)
