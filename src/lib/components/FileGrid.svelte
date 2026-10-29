@@ -1493,15 +1493,14 @@
     padding: 1px 6px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.4);
   }
-  .grid-icon:hover:not(.selected) {
+  .grid-item:hover:not(.selected) .grid-icon {
     background: var(--bg-hover, rgba(255,255,255,0.06));
     border-radius: 6px;
   }
-  .grid-name:hover:not(.selected) {
+  .grid-item:hover:not(.selected) .grid-name {
     background: var(--bg-hover, rgba(255,255,255,0.08));
     border-radius: 4px;
     padding: 1px 6px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
   }
 
   .grid-icon {
@@ -1668,10 +1667,7 @@
     width: 100%;
     box-sizing: border-box;
   }
-  .col-name:hover:not(.selected) {
-    background: var(--bg-hover, rgba(255,255,255,0.08));
-    border-radius: 4px;
-  }
+  .list-row:hover    { background: var(--bg-hover); }
   .list-row.selected { background: var(--bg-selected); border-color: var(--border-accent); }
   .list-row.drag-over,
   .grid-item.drag-over {

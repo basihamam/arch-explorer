@@ -363,8 +363,15 @@ export const previewEntry = writable(null);
 export const isRubberbandSelecting = writable(false);
 
 selectedPaths.subscribe(paths => {
-  // Çoklu seçim (rubberband / transparent marquee) sırasında veya 1'den farklı seçimde previewEntry'i temizle
-  if (get(isRubberbandSelecting) || paths.size !== 1) {
+  if (get(isRubberbandSelecting)) {
+    previewEntry.set(null);
+  } else if (paths.size === 1) {
+    const path = [...paths][0];
+    const entry = get(entries).find(e => e.path === path);
+    if (entry) previewEntry.set(entry);
+  } else if (paths.size === 0) {
+    previewEntry.set(null);
+  } else {
     previewEntry.set(null);
   }
 });
@@ -724,8 +731,10 @@ export function navigateForward() {
 }
 
 export function navigateUp() {
-  const path = get(currentPath);
-  if (path === "/" || path.startsWith("adb://") && (path.endsWith("/sdcard") || !path.includes("/sdcard/"))) return;
+  const rawPath = get(currentPath);
+  if (rawPath === "/" || rawPath.startsWith("adb://") && (rawPath.endsWith("/sdcard") || !rawPath.includes("/sdcard/"))) return;
+  const path = rawPath.replace(/\/+$/, "") || "/";
+  if (path === "/") return;
   const parent = path.split("/").slice(0, -1).join("/") || "/";
   selectedPaths.set(new Set());
   previewEntry.set(null);

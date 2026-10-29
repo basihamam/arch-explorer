@@ -1,6 +1,6 @@
 [package]
 name = "arch-explorer"
-version = "0.1.0"
+version = "0.2.0"
 description = "A blazing fast, fully customizable file explorer for Arch Linux"
 authors = ["ALX"]
 edition = "2021"

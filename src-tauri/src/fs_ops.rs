@@ -51,13 +51,24 @@ fn list_directory_inner(path: String, show_hidden: bool) -> Result<DirectoryList
     if !dir_path.exists() { return Err(format!("Path bulunamadı: {}", path)); }
     if !dir_path.is_dir() { return Err(format!("Dizin değil: {}", path)); }
 
+    // Eğer bu bir sembolik bağ (symlink) ise, gerçek orijinal konumuna çözümle (canonicalize)
+    // Böylece ~/cikti gibi symlink üzerinden girilince de orijinal konumdan girilmiş gibi tüm dosyalar eksiksiz görünür!
+    let (dir_path, resolved_path) = match fs::canonicalize(&dir_path) {
+        Ok(canon) => {
+            let s = canon.to_string_lossy().to_string();
+            (canon, s)
+        }
+        Err(_) => (dir_path.clone(), resolved_path),
+    };
+
     let dir_meta  = fs::metadata(&dir_path).map_err(|e| e.to_string())?;
     let dir_mtime = dir_meta.modified().unwrap_or(SystemTime::UNIX_EPOCH);
 
     {
         let cache = DIR_CACHE.lock().unwrap_or_else(|e| e.into_inner());
         if let Some(c) = cache.get(&resolved_path) {
-            if c.dir_mtime == dir_mtime && c.show_hidden == show_hidden {
+            // Asla boş listeyi önbellekten döndürme — her zaman diskten canlı oku
+            if !c.entries.is_empty() && c.dir_mtime == dir_mtime && c.show_hidden == show_hidden {
                 let total = c.entries.len();
                 return Ok(DirectoryListing {
                     path:        resolved_path.clone(),
@@ -97,7 +108,7 @@ fn list_directory_inner(path: String, show_hidden: bool) -> Result<DirectoryList
             let oldest = cache.keys().next().cloned();
             if let Some(k) = oldest { cache.remove(&k); }
         }
-        if entries.len() <= 6000 {
+        if !entries.is_empty() && entries.len() <= 6000 {
             cache.insert(resolved_path.clone(), CachedDir {
                 entries:     entries.clone(),
                 dir_mtime,
@@ -413,7 +424,11 @@ pub async fn sudo_list_directory(path: String, password: String, show_hidden: bo
         let python_script = r#"
 import os, sys, json, stat, datetime, mimetypes
 
-target = sys.argv[1]
+raw_target = sys.argv[1]
+try:
+    target = os.path.realpath(raw_target)
+except Exception:
+    target = raw_target
 show_hidden = sys.argv[2].lower() == "true"
 
 try:
