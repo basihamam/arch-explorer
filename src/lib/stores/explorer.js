@@ -305,11 +305,16 @@ export const previewCustomTypes = writable(JSON.parse(localStorage.getItem("prev
 previewMode.subscribe(v => localStorage.setItem("previewMode", v));
 previewCustomTypes.subscribe(v => localStorage.setItem("previewCustomTypes", JSON.stringify(v)));
 
+// Klasör önizlemesi açık/kapalı tercihi (Layout / Yerleşim ayarı)
+export const folderPreviewEnabled = writable(localStorage.getItem("folderPreviewEnabled") !== "false");
+folderPreviewEnabled.subscribe(v => localStorage.setItem("folderPreviewEnabled", String(v)));
+
 // showPreview artık previewMode'dan türetilir — backward compat için writable kalır
-// ama previewMode=manual ise false'a zorlanır
+// varsayılan ayarlarda önizleme HER ZAMAN açıktır (previewMode='always' -> showPreview=true)
 export const showPreview = writable(
-  localStorage.getItem("previewMode") !== "manual"
-    && localStorage.getItem("showPreview") !== "false"
+  (localStorage.getItem("previewMode") || "always") === "always"
+    ? true
+    : (localStorage.getItem("previewMode") !== "manual" && localStorage.getItem("showPreview") !== "false")
 );
 showPreview.subscribe(v => localStorage.setItem("showPreview", String(v)));
 
@@ -355,13 +360,11 @@ export const activeToolbarPath = derived(
 
 // ---- Preview entry ----
 export const previewEntry = writable(null);
+export const isRubberbandSelecting = writable(false);
 
 selectedPaths.subscribe(paths => {
-  if (paths.size === 1) {
-    const path = [...paths][0];
-    const entry = get(entries).find(e => e.path === path);
-    if (entry) previewEntry.set(entry);
-  } else if (paths.size === 0) {
+  // Çoklu seçim (rubberband / transparent marquee) sırasında veya 1'den farklı seçimde previewEntry'i temizle
+  if (get(isRubberbandSelecting) || paths.size !== 1) {
     previewEntry.set(null);
   }
 });
@@ -651,6 +654,7 @@ export async function loadDirectory(path, preserveScroll = false) {
   loadError.set(null);
   searchQuery.set("");
   previewEntry.set(null);
+  selectedPaths.set(new Set());
   try {
     const listing = await fetchDirectoryListing(path, get(showHidden));
     entries.set(listing.entries);
@@ -666,6 +670,7 @@ export async function loadDirectory(path, preserveScroll = false) {
     }));
     localStorage.setItem("lastPath", listing.path || path);
     selectedPaths.set(new Set());
+    previewEntry.set(null);
     invoke("start_watching", { path: listing.path || path }).catch(() => {});
     loadGitStatus(listing.path || path);
     if (preserveScroll && currentTabId) {
@@ -682,10 +687,12 @@ export async function loadDirectory(path, preserveScroll = false) {
 export function navigateTo(path) {
   showDevices.set(false); // DevicesView açıksa kapat
   const id  = get(activeTabId);
+  selectedPaths.set(new Set());
+  previewEntry.set(null);
   tabs.update(ts => ts.map(t => {
     if (t.id !== id) return t;
     const newHist = [...t.history.slice(0, t.historyIndex + 1), path];
-    return { ...t, history: newHist, historyIndex: newHist.length - 1 };
+    return { ...t, history: newHist, historyIndex: newHist.length - 1, path, label: path.split("/").filter(Boolean).pop() || "/" };
   }));
   loadDirectory(path);
 }
@@ -694,26 +701,34 @@ export function navigateBack() {
   const id = get(activeTabId);
   const tab = get(tabs).find(t => t.id === id);
   if (!tab || tab.historyIndex <= 0) return;
+  const targetPath = tab.history[tab.historyIndex - 1];
+  selectedPaths.set(new Set());
+  previewEntry.set(null);
   tabs.update(ts => ts.map(t =>
-    t.id === id ? { ...t, historyIndex: t.historyIndex - 1 } : t
+    t.id === id ? { ...t, historyIndex: t.historyIndex - 1, path: targetPath, label: targetPath.split("/").filter(Boolean).pop() || "/" } : t
   ));
-  loadDirectory(get(tabs).find(t => t.id === id).history[get(tabs).find(t => t.id === id).historyIndex]);
+  loadDirectory(targetPath);
 }
 
 export function navigateForward() {
   const id = get(activeTabId);
   const tab = get(tabs).find(t => t.id === id);
   if (!tab || tab.historyIndex >= tab.history.length - 1) return;
+  const targetPath = tab.history[tab.historyIndex + 1];
+  selectedPaths.set(new Set());
+  previewEntry.set(null);
   tabs.update(ts => ts.map(t =>
-    t.id === id ? { ...t, historyIndex: t.historyIndex + 1 } : t
+    t.id === id ? { ...t, historyIndex: t.historyIndex + 1, path: targetPath, label: targetPath.split("/").filter(Boolean).pop() || "/" } : t
   ));
-  loadDirectory(get(tabs).find(t => t.id === id).history[get(tabs).find(t => t.id === id).historyIndex]);
+  loadDirectory(targetPath);
 }
 
 export function navigateUp() {
   const path = get(currentPath);
   if (path === "/" || path.startsWith("adb://") && (path.endsWith("/sdcard") || !path.includes("/sdcard/"))) return;
   const parent = path.split("/").slice(0, -1).join("/") || "/";
+  selectedPaths.set(new Set());
+  previewEntry.set(null);
   navigateTo(parent);
 }
 

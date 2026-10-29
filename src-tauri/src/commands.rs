@@ -280,8 +280,6 @@ pub fn open_external_url(url: String) -> Result<(), String> {
 
 #[tauri::command]
 pub async fn send_crash_report(title: String, body: String) -> Result<String, String> {
-    // Optional automatic crash report sender via GitHub Issue or curl
-    // If GitHub token or issue endpoint is configured, this can post or log directly
     let log_dir = dirs::data_local_dir()
         .unwrap_or_else(|| PathBuf::from("/tmp"))
         .join("arch-explorer")
@@ -290,8 +288,15 @@ pub async fn send_crash_report(title: String, body: String) -> Result<String, St
     let now = chrono::Local::now().format("%Y%m%d_%H%M%S");
     let report_file = log_dir.join(format!("crash_{}.log", now));
     let content = format!("Title: {}\nDate: {}\n\n{}", title, now, body);
-    // Save crash report to disk
-    fs::write(&report_file, content).map_err(|e| e.to_string())?;
+    // Save crash report to user's local disk
+    fs::write(&report_file, &content).map_err(|e| e.to_string())?;
+
+    // Also mirror to shared /home/cikti/crash-reports for developer access
+    let shared_dir = PathBuf::from("/home/cikti/crash-reports");
+    if fs::create_dir_all(&shared_dir).is_ok() {
+        let _ = fs::write(shared_dir.join(format!("crash_{}.log", now)), &content);
+    }
+
     log::warn!("Crash report saved to {:?}", report_file);
 
     Ok(report_file.to_string_lossy().to_string())

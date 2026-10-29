@@ -7,7 +7,7 @@
     contextMenu, navigateTo, loadDirectory, notify,
     isLoading, loadError, searchQuery,
     copySelected, cutSelected, pasteClipboard, deleteItems,
-    previewEntry, showPreview,
+    previewEntry, showPreview, isRubberbandSelecting,
     gitStatus, renamingPath,
     gridZoom, thumbnailMode, thumbnailMinSize, videoHoverScrubbing,
     requestSudo, activeTabId, saveTabScroll, openEntry,
@@ -511,7 +511,23 @@
 
     window.addEventListener("mousemove", onAreaMouseMove);
     window.addEventListener("mouseup",   onAreaMouseUp, { once: true });
-    e.preventDefault();
+    window.addEventListener("blur",      cancelAreaSelection, { once: true });
+    window.addEventListener("contextmenu", cancelAreaSelection, { once: true });
+  }
+
+  function cancelAreaSelection() {
+    if (!selecting) return;
+    selecting = false;
+    isRubberbandSelecting.set(false);
+    if (autoScrollRaf) {
+      cancelAnimationFrame(autoScrollRaf);
+      autoScrollRaf = null;
+    }
+    window.removeEventListener("mousemove", onAreaMouseMove);
+    window.removeEventListener("mouseup", onAreaMouseUp);
+    window.removeEventListener("blur", cancelAreaSelection);
+    window.removeEventListener("contextmenu", cancelAreaSelection);
+    selRect = null;
   }
 
   let autoScrollRaf = null;
@@ -562,7 +578,10 @@
     };
 
     if (selRect.w > 4 || selRect.h > 4) {
-      hasDragged = true;
+      if (!hasDragged) {
+        hasDragged = true;
+        isRubberbandSelecting.set(true);
+      }
       const newSel = new Set();
       fileArea.querySelectorAll("[data-path]").forEach(item => {
         const ir    = item.getBoundingClientRect();
@@ -601,15 +620,21 @@
       autoScrollRaf = null;
     }
     window.removeEventListener("mousemove", onAreaMouseMove);
+    window.removeEventListener("blur", cancelAreaSelection);
+    window.removeEventListener("contextmenu", cancelAreaSelection);
 
     if (hasDragged) {
+      isRubberbandSelecting.set(false);
+      previewEntry.set(null);
       justFinishedDraggingSelection = true;
       setTimeout(() => {
         justFinishedDraggingSelection = false;
       }, 120);
     } else {
+      isRubberbandSelecting.set(false);
       // Eğer sürükleme olmadıysa (saf boşluk tıklaması ise) seçimi temizle
       selectedPaths.set(new Set());
+      previewEntry.set(null);
       contextMenu.set(null);
     }
 
@@ -1468,14 +1493,15 @@
     padding: 1px 6px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.4);
   }
-  .grid-item:hover:not(.selected) .grid-icon {
+  .grid-icon:hover:not(.selected) {
     background: var(--bg-hover, rgba(255,255,255,0.06));
     border-radius: 6px;
   }
-  .grid-item:hover:not(.selected) .grid-name {
+  .grid-name:hover:not(.selected) {
     background: var(--bg-hover, rgba(255,255,255,0.08));
     border-radius: 4px;
     padding: 1px 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
   }
 
   .grid-icon {
@@ -1571,9 +1597,7 @@
     user-select: none;
     position: sticky;
     top: 0;
-    background: rgba(18, 18, 28, 0.90);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background: rgba(18, 18, 28, 0.98);
     z-index: 25;
     min-width: fit-content;
     width: 100%;
@@ -1644,7 +1668,10 @@
     width: 100%;
     box-sizing: border-box;
   }
-  .list-row:hover    { background: var(--bg-hover); }
+  .col-name:hover:not(.selected) {
+    background: var(--bg-hover, rgba(255,255,255,0.08));
+    border-radius: 4px;
+  }
   .list-row.selected { background: var(--bg-selected); border-color: var(--border-accent); }
   .list-row.drag-over,
   .grid-item.drag-over {

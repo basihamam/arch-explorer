@@ -221,23 +221,36 @@ video:-webkit-full-screen {
   box-shadow: 0 4px 14px rgba(255, 95, 109, 0.3);
 }
 
-/* Micro animations for grid items and list rows */
-.grid-item {
+/* Micro animations for grid items and list rows — İkon ve isim hitbox'ına girilince tüm öğe eski gibi kusursuz hareket eder */
+.grid-item,
+.pane-grid-item {
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.15s ease, border-color 0.15s ease, box-shadow 0.2s ease !important;
 }
-.grid-item:hover {
+
+.grid-item:has(.grid-icon:hover),
+.grid-item:has(.grid-name:hover),
+.pane-grid-item:has(.pane-grid-icon:hover),
+.pane-grid-item:has(.pane-grid-name:hover) {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
 }
-.grid-item:active {
+
+.grid-item:has(.grid-icon:active),
+.grid-item:has(.grid-name:active),
+.pane-grid-item:has(.pane-grid-icon:active),
+.pane-grid-item:has(.pane-grid-name:active) {
   transform: translateY(0px) scale(0.98);
 }
 
-.list-row {
+.list-row,
+.pane-list-row {
   transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), background 0.15s ease, border-color 0.15s ease !important;
 }
-.list-row:hover {
+
+.list-row:has(.col-name:hover),
+.pane-list-row:has(.pane-col-name:hover) {
   transform: translateX(3px);
+  background: var(--bg-hover);
 }
 
 /* ---- Inputs ---- */

@@ -114,6 +114,7 @@ pub struct ConflictItem {
     pub dst_modified: String,
 }
 
+#[allow(dead_code)]
 fn collect_conflicts_recursive(src: &Path, dst: &Path, conflicts: &mut Vec<ConflictItem>) {
     if let Ok(entries) = fs::read_dir(src) {
         for entry in entries.filter_map(|e| e.ok()) {
@@ -242,11 +243,6 @@ pub fn check_file_conflicts(sources: Vec<String>, dest_dir: String) -> Result<Ve
                 src_modified,
                 dst_modified,
             });
-
-            // Eğer her ikisi de klasör ise, içindeki alt dosyaları da tara
-            if is_dir && src.is_dir() {
-                collect_conflicts_recursive(&src, &dst, &mut conflicts);
-            }
         }
     }
 

@@ -2,6 +2,7 @@
   import { onMount, createEventDispatcher } from "svelte";
   import { invoke } from "@tauri-apps/api/core";
   import { notify, requestSudo } from "../stores/explorer.js";
+  import { t, currentLocale } from "../i18n.js";
 
   export let filePath = "";
 
@@ -92,19 +93,20 @@
 
   function explainPermissions(oct, isDir) {
     const s = (oct || "").trim().padStart(3, "0").slice(-3);
+    const isTr = $currentLocale === "tr";
     function exp(char, role) {
       const v = parseInt(char, 10) || 0;
       const acts = [];
-      if (v & 4) acts.push("Okuma (r)");
-      if (v & 2) acts.push("Yazma / Değiştirme (w)");
-      if (v & 1) acts.push(isDir ? "Klasöre Giriş (x)" : "Çalıştırma (x)");
-      if (acts.length === 0) return `${role}: Yetki Yok (—)`;
+      if (v & 4) acts.push(isTr ? "Okuma (r)" : "Read (r)");
+      if (v & 2) acts.push(isTr ? "Yazma / Değiştirme (w)" : "Write (w)");
+      if (v & 1) acts.push(isDir ? (isTr ? "Klasöre Giriş (x)" : "Traverse (x)") : (isTr ? "Çalıştırma (x)" : "Execute (x)"));
+      if (acts.length === 0) return `${role}: ${isTr ? "Yetki Yok (—)" : "No Access (—)"}`;
       return `${role}: ${acts.join(", ")}`;
     }
     return [
-      exp(s[0], "Sahip (User)"),
-      exp(s[1], "Grup (Group)"),
-      exp(s[2], "Diğerleri (Others)")
+      exp(s[0], isTr ? "Sahip (User)" : "Owner (User)"),
+      exp(s[1], isTr ? "Grup (Group)" : "Group"),
+      exp(s[2], isTr ? "Diğerleri (Others)" : "Others")
     ];
   }
 
@@ -318,36 +320,36 @@
         <!-- Genel Bilgiler -->
         <div class="prop-section">
           <div class="prop-row">
-            <span class="pk">Dosya Adı:</span>
+            <span class="pk">{$t("prop_file_name")}</span>
             <span class="pv selectable" title={props.name}>{props.name}</span>
           </div>
 
           <div class="prop-row">
-            <span class="pk">Tür:</span>
+            <span class="pk">{$t("prop_type")}</span>
             <span class="pv">
               {#if props.is_dir}
-                Klasör (Dizin)
+                {$t("prop_type_folder")}
               {:else if props.is_symlink}
-                Sembolik Bağ ({props.symlink_target || "bağlantı"})
+                {$t("prop_type_symlink")} ({props.symlink_target || "link"})
               {:else}
-                {props.extension ? props.extension.toUpperCase() + " Dosyası" : "Dosya"} ({props.mime_type})
+                {props.extension ? props.extension.toUpperCase() + " " + $t("prop_type_file") : $t("prop_type_file")} ({props.mime_type})
               {/if}
             </span>
           </div>
 
           <div class="prop-row">
-            <span class="pk">Konum:</span>
+            <span class="pk">{$t("prop_location")}</span>
             <div class="pv-with-action">
               <span class="pv mono path-text" title={props.parent_dir}>{props.parent_dir}</span>
-              <button class="mini-btn" on:click={() => copyText(props.parent_dir, "Konum kopyalandı")} title="Konumu Kopyala">📋</button>
+              <button class="mini-btn" on:click={() => copyText(props.parent_dir, $currentLocale === "tr" ? "Konum kopyalandı" : "Location copied")} title={$t("copy_path")}>📋</button>
             </div>
           </div>
 
           <div class="prop-row">
-            <span class="pk">Tam Yol:</span>
+            <span class="pk">{$t("prop_full_path")}</span>
             <div class="pv-with-action">
               <span class="pv mono path-text" title={props.path}>{props.path}</span>
-              <button class="mini-btn" on:click={() => copyText(props.path, "Yol kopyalandı")} title="Yolu Kopyala">📋</button>
+              <button class="mini-btn" on:click={() => copyText(props.path, $currentLocale === "tr" ? "Yol kopyalandı" : "Path copied")} title={$t("copy_path")}>📋</button>
             </div>
           </div>
         </div>
@@ -357,33 +359,33 @@
         <!-- Boyut & İçerik -->
         <div class="prop-section">
           <div class="prop-row">
-            <span class="pk">Boyut:</span>
+            <span class="pk">{$t("prop_size")}</span>
             <div class="pv-with-action">
               {#if props.is_dir}
                 {#if dirSizeResult && dirSizeResult.size > 0}
                   <span class="pv font-bold">{formatBytes(dirSizeResult.size)}</span>
-                  <span class="pv-sub mono">({dirSizeResult.size.toLocaleString()} bayt)</span>
+                  <span class="pv-sub mono">({dirSizeResult.size.toLocaleString()} {$currentLocale === "tr" ? "bayt" : "bytes"})</span>
                 {:else if calculatingDir}
-                  <span class="pv-sub" style="color:var(--accent)">Hesaplanıyor…</span>
+                  <span class="pv-sub" style="color:var(--accent)">{$t("prop_calculating")}</span>
                 {:else}
                   <span class="pv-sub">—</span>
-                  <button class="calc-btn" on:click={calculateDirSize} disabled={calculatingDir}>Hesapla</button>
+                  <button class="calc-btn" on:click={calculateDirSize} disabled={calculatingDir}>{$t("prop_calculate")}</button>
                 {/if}
               {:else}
                 <span class="pv font-bold">{formatBytes(props.size)}</span>
-                <span class="pv-sub mono">({props.size.toLocaleString()} bayt)</span>
+                <span class="pv-sub mono">({props.size.toLocaleString()} {$currentLocale === "tr" ? "bayt" : "bytes"})</span>
               {/if}
             </div>
           </div>
 
           {#if props.is_dir}
             <div class="prop-row">
-              <span class="pk">İçerik:</span>
+              <span class="pk">{$t("prop_content")}</span>
               <span class="pv">
                 {#if dirSizeResult && dirSizeResult.file_count > 0}
-                  {dirSizeResult.file_count.toLocaleString()} öğe (alt dizinler dahil)
+                  {dirSizeResult.file_count.toLocaleString()} {$t("prop_items_in_dir")}
                 {:else if props.file_count !== null}
-                  {props.file_count} öğe (bu dizinde)
+                  {props.file_count} {$t("prop_items_here")}
                 {:else}
                   —
                 {/if}
@@ -397,15 +399,15 @@
         <!-- Zaman Damgaları -->
         <div class="prop-section">
           <div class="prop-row">
-            <span class="pk">Değiştirilme:</span>
+            <span class="pk">{$t("prop_modified")}</span>
             <span class="pv mono">{props.modified}</span>
           </div>
           <div class="prop-row">
-            <span class="pk">Oluşturulma:</span>
+            <span class="pk">{$t("prop_created")}</span>
             <span class="pv mono">{props.created}</span>
           </div>
           <div class="prop-row">
-            <span class="pk">Son Erişim:</span>
+            <span class="pk">{$t("prop_accessed")}</span>
             <span class="pv mono">{props.accessed}</span>
           </div>
         </div>
@@ -415,15 +417,15 @@
         <!-- İzinler ve Sahiplik -->
         <div class="prop-section">
           <div class="prop-row">
-            <span class="pk">İzinler:</span>
+            <span class="pk">{$t("prop_perms")}</span>
             <div class="pv-with-action" style="flex: 1;">
               {#if !isEditingPerms}
                 <span class="pv mono perm-tag selectable">{props.permissions_str}</span>
                 <span class="pv mono octal-tag selectable">({props.permissions_octal})</span>
                 {#if props.is_readonly}
-                  <span class="readonly-badge">Yalnızca Okunur</span>
+                  <span class="readonly-badge">{$t("prop_readonly")}</span>
                 {/if}
-                <button class="mini-btn edit-btn" on:click={() => { isEditingPerms = true; editOctal = props.permissions_octal?.slice(-3) || "755"; editRwx = octalToRwx(editOctal); }} title="İzinleri Değiştir">✏ Değiştir</button>
+                <button class="mini-btn edit-btn" on:click={() => { isEditingPerms = true; editOctal = props.permissions_octal?.slice(-3) || "755"; editRwx = octalToRwx(editOctal); }} title={$t("prop_change")}>{$t("prop_change")}</button>
               {:else}
                 <div class="edit-box-rich">
                   <!-- Sayısal (Oktal) ve Harfsel (RWX) Çift Yönlü Giriş + Hızlı Önayarlar -->
@@ -497,15 +499,15 @@
 
                   {#if props.is_dir}
                     <label class="rec-label" style="margin-top: 4px;">
-                      <input type="checkbox" bind:checked={applyRecursive} /> Alt dizin ve dosyalara da uygula (-R)
+                      <input type="checkbox" bind:checked={applyRecursive} /> {$t("prop_apply_recursive")}
                     </label>
                   {/if}
 
                   <div class="edit-actions" style="margin-top: 6px;">
                     <button class="mini-btn save-btn" on:click={savePermissions} disabled={busySaving}>
-                      {busySaving ? "..." : "✓ İzinleri Kaydet"}
+                      {busySaving ? "..." : $t("prop_save_perms")}
                     </button>
-                    <button class="mini-btn cancel-btn" on:click={() => isEditingPerms = false} disabled={busySaving}>✕ İptal</button>
+                    <button class="mini-btn cancel-btn" on:click={() => isEditingPerms = false} disabled={busySaving}>✕ {$t("cancel")}</button>
                   </div>
                 </div>
               {/if}
@@ -513,25 +515,25 @@
           </div>
 
           <div class="prop-row">
-            <span class="pk">Sahip / Grup:</span>
+            <span class="pk">{$t("prop_owner_group")}</span>
             <div class="pv-with-action" style="flex: 1;">
               {#if !isEditingOwner}
                 <span class="pv mono selectable">
                   <strong>{props.owner_name}</strong> : <strong>{props.group_name}</strong>
                   <span class="pv-sub mono">({props.owner_uid}:{props.owner_gid})</span>
                 </span>
-                <button class="mini-btn edit-btn" on:click={() => { isEditingOwner = true; editOwner = props.owner_name; editGroup = props.group_name; }} title="Sahip/Grup Değiştir">✏ Değiştir</button>
+                <button class="mini-btn edit-btn" on:click={() => { isEditingOwner = true; editOwner = props.owner_name; editGroup = props.group_name; }} title={$t("prop_change")}>{$t("prop_change")}</button>
               {:else}
                 <div class="edit-box-rich">
                   <div class="owner-inputs-row">
                     <div class="input-labeled" style="flex: 1; min-width: 0;">
-                      <span class="edit-lbl">Kullanıcı (Sahip):</span>
+                      <span class="edit-lbl">{$t("prop_user_owner")}</span>
                       <input
                         class="mini-input mono unified-combo"
                         type="text"
                         bind:value={editOwner}
                         list="users-datalist"
-                        placeholder="kullanıcı seç/yaz"
+                        placeholder="user"
                       />
                       <datalist id="users-datalist">
                         {#each systemUsers as u}
@@ -541,13 +543,13 @@
                     </div>
 
                     <div class="input-labeled" style="flex: 1; min-width: 0;">
-                      <span class="edit-lbl">Grup:</span>
+                      <span class="edit-lbl">{$t("prop_group")}</span>
                       <input
                         class="mini-input mono unified-combo"
                         type="text"
                         bind:value={editGroup}
                         list="groups-datalist"
-                        placeholder="grup seç/yaz"
+                        placeholder="group"
                       />
                       <datalist id="groups-datalist">
                         {#each systemGroups as g}
@@ -558,20 +560,20 @@
                   </div>
 
                   <p class="hint" style="margin-top: 6px;">
-                    Listeden seçebilir veya elle yazabilirsiniz. Başka bir kullanıcıya devretmek için root (sudo) yetkisi otomatik istenecektir.
+                    {$t("prop_owner_hint")}
                   </p>
 
                   {#if props.is_dir}
                     <label class="rec-label" style="margin-top: 4px;">
-                      <input type="checkbox" bind:checked={applyRecursive} /> Alt dizin ve dosyalara da uygula (-R)
+                      <input type="checkbox" bind:checked={applyRecursive} /> {$t("prop_apply_recursive")}
                     </label>
                   {/if}
 
                   <div class="edit-actions" style="margin-top: 8px;">
                     <button class="mini-btn save-btn" on:click={saveOwner} disabled={busySaving}>
-                      {busySaving ? "..." : "✓ Sahipliği Kaydet"}
+                      {busySaving ? "..." : $t("prop_save_owner")}
                     </button>
-                    <button class="mini-btn cancel-btn" on:click={() => isEditingOwner = false} disabled={busySaving}>✕ İptal</button>
+                    <button class="mini-btn cancel-btn" on:click={() => isEditingOwner = false} disabled={busySaving}>✕ {$t("cancel")}</button>
                   </div>
                 </div>
               {/if}
@@ -584,26 +586,26 @@
           <div class="prop-divider"></div>
           <div class="prop-section">
             <div class="prop-row">
-              <span class="pk">Checksum:</span>
+              <span class="pk">{$t("checksum")}:</span>
               <div class="pv-with-action" style="flex:1">
                 {#if checksumResult}
                   <div class="hash-box">
                     <div class="hash-row">
                       <span class="hash-label">MD5:</span>
                       <span class="hash-val mono" title={checksumResult.md5}>{checksumResult.md5}</span>
-                      <button class="mini-btn" on:click={() => copyText(checksumResult.md5, "MD5 kopyalandı")}>📋</button>
+                      <button class="mini-btn" on:click={() => copyText(checksumResult.md5, $currentLocale === "tr" ? "MD5 kopyalandı" : "MD5 copied")}>📋</button>
                     </div>
                     <div class="hash-row">
                       <span class="hash-label">SHA256:</span>
                       <span class="hash-val mono" title={checksumResult.sha256}>{checksumResult.sha256}</span>
-                      <button class="mini-btn" on:click={() => copyText(checksumResult.sha256, "SHA256 kopyalandı")}>📋</button>
+                      <button class="mini-btn" on:click={() => copyText(checksumResult.sha256, $currentLocale === "tr" ? "SHA256 kopyalandı" : "SHA256 copied")}>📋</button>
                     </div>
                   </div>
                 {:else if calculatingHash}
-                  <span class="pv-sub" style="color:var(--accent)">Hesaplanıyor…</span>
+                  <span class="pv-sub" style="color:var(--accent)">{$t("prop_calculating")}</span>
                 {:else}
                   <button class="calc-btn" on:click={calculateChecksum} disabled={calculatingHash}>
-                    MD5 / SHA256 Doğrula
+                    {$t("prop_verify_checksum")}
                   </button>
                 {/if}
               </div>
@@ -613,7 +615,7 @@
       </div>
 
       <div class="prop-footer">
-        <button class="btn btn-accent" on:click={close}>Tamam</button>
+        <button class="btn btn-accent" on:click={close}>{$t("prop_ok")}</button>
       </div>
     {/if}
   </div>

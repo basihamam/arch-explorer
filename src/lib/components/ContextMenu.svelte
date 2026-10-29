@@ -9,6 +9,7 @@
            isTrashPath, restoreTrashPaths, restoreAllTrashItems, emptyTrashNow } from "../stores/explorer.js";
   import { invoke, convertFileSrc } from "@tauri-apps/api/core";
   import { onMount, createEventDispatcher } from "svelte";
+  import { t, currentLocale } from "../i18n.js";
   import OpenWithPanel from "./OpenWithPanel.svelte";
   import PropertiesModal from "./PropertiesModal.svelte";
 
@@ -539,7 +540,7 @@
           on:contextmenu|preventDefault|stopPropagation={restoreItems}
         >
           <span class="ctx-icon">⤺</span>
-          <span class="ctx-label">{multiSelect ? "Geri Yükle (Seçili)" : "Geri Yükle"}</span>
+          <span class="ctx-label">{multiSelect ? $t("restore_selected") : $t("restore")}</span>
         </button>
         <button
           class="ctx-item danger"
@@ -548,7 +549,7 @@
           on:contextmenu|preventDefault|stopPropagation={deletePerma}
         >
           <span class="ctx-icon">✕</span>
-          <span class="ctx-label">Kalıcı Olarak Sil</span>
+          <span class="ctx-label">{$t("permanent_delete")}</span>
           <span class="ctx-shortcut">Del</span>
         </button>
         <div class="ctx-sep"></div>
@@ -804,7 +805,7 @@
 
     {:else}
       <!-- Background right-click -->
-      <div class="ctx-label">{inTrash ? "Çöp Kutusu (Trash)" : "This Folder"}</div>
+      <div class="ctx-label">{inTrash ? $t("trash_folder") : $t("this_folder")}</div>
       <div class="ctx-sep"></div>
 
       <!-- Çöp kutusu boş alandayken ek 2 eylem: Tümünü Geri Yükle & Çöpü Boşalt -->
@@ -816,7 +817,7 @@
           on:contextmenu|preventDefault|stopPropagation={restoreAll}
         >
           <span class="ctx-icon">⤺</span>
-          <span class="ctx-label">Tümünü Geri Yükle</span>
+          <span class="ctx-label">{$t("restore_all")}</span>
         </button>
         <button
           class="ctx-item danger"
@@ -825,7 +826,7 @@
           on:contextmenu|preventDefault|stopPropagation={emptyTrash}
         >
           <span class="ctx-icon">🗑</span>
-          <span class="ctx-label">Çöpü Boşalt</span>
+          <span class="ctx-label">{$t("empty_trash")}</span>
         </button>
         <div class="ctx-sep"></div>
       {/if}

@@ -16,7 +16,7 @@
     rightSearchQuery,
     rightGridZoom, leftGridZoom,
     requestSudo, fetchDirectoryListing,
-    previewEntry, showPreview,
+    previewEntry, showPreview, isRubberbandSelecting,
     thumbnailMode, thumbnailMinSize, runCommand,
     safeBatchFileOp, rightSelectedPaths, rightEntries, openEntry,
     toggleSort, setFolderSort,
@@ -146,12 +146,15 @@
     isLoading  = true;
     loadError  = null;
     searchQuery = "";
+    selectedPaths = new Set();
+    previewEntry.set(null);
     try {
       const res = await fetchDirectoryListing(path, _showHidden);
       entries = Array.isArray(res?.entries) ? res.entries : (Array.isArray(res) ? res : []);
       const targetPath = res.path || path;
       _updateTab(t => ({ ...t, path: targetPath, label: targetPath.split("/").filter(Boolean).pop() || "/" }));
       selectedPaths = new Set();
+      previewEntry.set(null);
       invoke("start_watching", { path: targetPath }).catch(() => {});
     } catch (e) {
       loadError = String(e);
@@ -161,9 +164,11 @@
   }
 
   function navigateTo(path) {
+    selectedPaths = new Set();
+    previewEntry.set(null);
     _updateTab(t => {
       const hist = [...t.history.slice(0, t.histIdx + 1), path];
-      return { ...t, history: hist, histIdx: hist.length - 1 };
+      return { ...t, history: hist, histIdx: hist.length - 1, path, label: path.split("/").filter(Boolean).pop() || "/" };
     });
     loadDir(path);
     dispatch("focus", { paneId });
@@ -171,14 +176,20 @@
 
   function navigateBack() {
     if (!canBack) return;
-    _updateTab(t => ({ ...t, histIdx: t.histIdx - 1 }));
-    loadDir(activeTab.history[activeTab.histIdx - 1]);
+    const targetPath = activeTab.history[activeTab.histIdx - 1];
+    selectedPaths = new Set();
+    previewEntry.set(null);
+    _updateTab(t => ({ ...t, histIdx: t.histIdx - 1, path: targetPath, label: targetPath.split("/").filter(Boolean).pop() || "/" }));
+    loadDir(targetPath);
   }
 
   function navigateForward() {
     if (!canForward) return;
-    _updateTab(t => ({ ...t, histIdx: t.histIdx + 1 }));
-    loadDir(activeTab.history[activeTab.histIdx + 1]);
+    const targetPath = activeTab.history[activeTab.histIdx + 1];
+    selectedPaths = new Set();
+    previewEntry.set(null);
+    _updateTab(t => ({ ...t, histIdx: t.histIdx + 1, path: targetPath, label: targetPath.split("/").filter(Boolean).pop() || "/" }));
+    loadDir(targetPath);
   }
 
   function navigateUp() {
@@ -218,7 +229,6 @@
     dispatch("focus", { paneId });
 
     // Preview panel — son tıklanan entry güncelle
-    showPreview.set(true);
     const entry = displayEntries.find(en => en.path === path) || null;
     if (entry) {
       previewEntry.set(entry);
@@ -280,7 +290,23 @@
 
     window.addEventListener("mousemove", onAreaMouseMove);
     window.addEventListener("mouseup",   onAreaMouseUp, { once: true });
-    e.preventDefault();
+    window.addEventListener("blur",      cancelAreaSelection, { once: true });
+    window.addEventListener("contextmenu", cancelAreaSelection, { once: true });
+  }
+
+  function cancelAreaSelection() {
+    if (!selecting) return;
+    selecting = false;
+    isRubberbandSelecting.set(false);
+    if (autoScrollRaf) {
+      cancelAnimationFrame(autoScrollRaf);
+      autoScrollRaf = null;
+    }
+    window.removeEventListener("mousemove", onAreaMouseMove);
+    window.removeEventListener("mouseup", onAreaMouseUp);
+    window.removeEventListener("blur", cancelAreaSelection);
+    window.removeEventListener("contextmenu", cancelAreaSelection);
+    selRect = null;
   }
 
   let autoScrollRaf = null;
@@ -329,7 +355,10 @@
     };
 
     if (selRect.w > 4 || selRect.h > 4) {
-      hasDragged = true;
+      if (!hasDragged) {
+        hasDragged = true;
+        isRubberbandSelecting.set(true);
+      }
       const newSel = new Set();
       paneFileArea.querySelectorAll("[data-path]").forEach(item => {
         const ir    = item.getBoundingClientRect();
@@ -368,15 +397,21 @@
       autoScrollRaf = null;
     }
     window.removeEventListener("mousemove", onAreaMouseMove);
+    window.removeEventListener("blur", cancelAreaSelection);
+    window.removeEventListener("contextmenu", cancelAreaSelection);
 
     if (hasDragged) {
+      isRubberbandSelecting.set(false);
+      previewEntry.set(null);
       justFinishedDraggingSelection = true;
       setTimeout(() => {
         justFinishedDraggingSelection = false;
       }, 120);
     } else {
+      isRubberbandSelecting.set(false);
       // Eğer sürükleme olmadıysa (saf boşluk tıklaması ise) seçimi temizle
       selectedPaths = new Set();
+      previewEntry.set(null);
     }
     selRect   = null;
     selStart  = null;
@@ -1574,31 +1609,31 @@
         {#if inTrash}
           <button class="pane-ctx-item" on:click={ctxRestore}>
             <span class="pane-ctx-icon">⤺</span>
-            <span class="pane-ctx-title">Geri Yükle</span>
+            <span class="pane-ctx-title">{$t("restore")}</span>
           </button>
           <button class="pane-ctx-item danger" on:click={() => ctxDelete(true)}>
             <span class="pane-ctx-icon">✕</span>
-            <span class="pane-ctx-title">Kalıcı Olarak Sil</span>
+            <span class="pane-ctx-title">{$t("permanent_delete")}</span>
             <span class="pane-ctx-sc">Del</span>
           </button>
           <div class="pane-ctx-sep"></div>
           <button class="pane-ctx-item" on:click={async () => { await restoreAllTrashItems(); await loadDir(currentPath); closeCtx(); }}>
             <span class="pane-ctx-icon">⤺</span>
-            <span class="pane-ctx-title">Tümünü Geri Yükle</span>
+            <span class="pane-ctx-title">{$t("restore_all")}</span>
           </button>
           <button class="pane-ctx-item danger" on:click={async () => { await emptyTrashNow(); await loadDir(currentPath); closeCtx(); }}>
             <span class="pane-ctx-icon">🗑</span>
-            <span class="pane-ctx-title">Çöpü Boşalt</span>
+            <span class="pane-ctx-title">{$t("empty_trash")}</span>
           </button>
         {:else}
           <button class="pane-ctx-item" on:click={() => ctxDelete(false)}>
             <span class="pane-ctx-icon">🗑</span>
-            <span class="pane-ctx-title">Trash</span>
+            <span class="pane-ctx-title">{$t("move_to_trash")}</span>
             <span class="pane-ctx-sc">Del</span>
           </button>
           <button class="pane-ctx-item danger" on:click={() => ctxDelete(true)}>
             <span class="pane-ctx-icon">✕</span>
-            <span class="pane-ctx-title">Delete</span>
+            <span class="pane-ctx-title">{$t("delete")}</span>
             <span class="pane-ctx-sc">Shift+Del</span>
           </button>
         {/if}
@@ -1608,7 +1643,7 @@
         <!-- More Options -->
         <button class="pane-ctx-item" on:click={() => showMoreCtx = !showMoreCtx}>
           <span class="pane-ctx-icon">⋯</span>
-          <span class="pane-ctx-title">Diğer Seçenekler</span>
+          <span class="pane-ctx-title">{$t("more_options")}</span>
           <span class="pane-ctx-sc">{showMoreCtx ? "▲" : "▼"}</span>
         </button>
 
@@ -1743,14 +1778,15 @@
     padding: 1px 6px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.4);
   }
-  .pane-grid-item:hover:not(.selected) .pane-grid-icon {
+  .pane-grid-icon:hover:not(.selected) {
     background: var(--bg-hover, rgba(255,255,255,0.06));
     border-radius: 6px;
   }
-  .pane-grid-item:hover:not(.selected) .pane-grid-name {
+  .pane-grid-name:hover:not(.selected) {
     background: var(--bg-hover, rgba(255,255,255,0.08));
     border-radius: 4px;
     padding: 1px 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
   }
   .pane-grid-icon {
     line-height: 1;
@@ -1786,14 +1822,12 @@
     border-bottom: 1px solid var(--border);
     position: sticky;
     top: 0;
-    background: rgba(18, 18, 28, 0.90);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background: rgba(18, 18, 28, 0.98);
     z-index: 25;
     box-sizing: border-box;
   }
   .pane-list-row { display: grid; grid-template-columns: 1fr 70px 120px; align-items: center; padding: 4px 6px; border-radius: var(--radius-sm); border: 1px solid transparent; cursor: pointer; margin-bottom: 2px; }
-  .pane-list-row:hover { background: var(--bg-hover); }
+  .pane-col-name:hover:not(.selected) { background: var(--bg-hover, rgba(255,255,255,0.08)); border-radius: 4px; }
   .pane-list-row.selected { background: var(--bg-selected); border-color: var(--border-accent); }
   .pane-list-row.drag-over,
   .pane-grid-item.drag-over {
@@ -1869,10 +1903,9 @@
     font-size: 11px;
     font-weight: 500;
     color: var(--accent, #6366f1);
-    background: rgba(18, 18, 26, 0.88);
+    background: rgba(18, 18, 26, 0.95);
     border: 1px solid rgba(99, 102, 241, 0.35);
     border-radius: 9999px;
-    backdrop-filter: blur(8px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     z-index: 10;
     pointer-events: none;

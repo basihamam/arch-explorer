@@ -6,7 +6,7 @@
     previewMode, previewCustomTypes, thumbnailMode, thumbnailMinSize, gridZoom,
     adminMode, alwaysLaunchSudo, sessionSudoPassword, requestSudo,
     bookmarkIconsEnabled, videoHoverScrubbing, conflictFileAction, conflictDirAction,
-    autoCrashReport
+    autoCrashReport, showPreview, folderPreviewEnabled
   } from "../stores/explorer.js";
   import { t, currentLocale, setLocale } from "../i18n.js";
 
@@ -33,41 +33,42 @@
     if (enable) {
       if ($sessionSudoPassword) {
         adminMode.set(true);
-        notify("success", "Yönetici (Admin) Modu aktif edildi");
+        notify("success", $currentLocale === "tr" ? "Yönetici (Admin) Modu aktif edildi" : "Admin Mode enabled");
       } else {
         try {
           await requestSudo(
-            "Yönetici (Admin) Modunu Etkinleştir",
-            "Uygulamanın şifre sormadan doğrudan root yetkisiyle çalışması için sudo şifrenizi girin.",
+            $currentLocale === "tr" ? "Yönetici (Admin) Modunu Etkinleştir" : "Enable Admin Mode",
+            $currentLocale === "tr" ? "Uygulamanın şifre sormadan doğrudan root yetkisiyle çalışması için sudo şifrenizi girin." : "Enter sudo password to run with root privileges without prompting.",
             async (pwd) => {
               await invoke("verify_sudo_password", { password: pwd });
               sessionSudoPassword.set(pwd);
               adminMode.set(true);
-              notify("success", "Yönetici (Admin) Modu aktif edildi");
+              notify("success", $currentLocale === "tr" ? "Yönetici (Admin) Modu aktif edildi" : "Admin Mode enabled");
             }
           );
         } catch (e) {
-          // İptal edildi veya hata
+          // cancelled or failed
         }
       }
     } else {
       adminMode.set(false);
-      notify("info", "Yönetici (Admin) Modu kapatıldı");
+      notify("info", $currentLocale === "tr" ? "Yönetici (Admin) Modu kapatıldı" : "Admin Mode disabled");
     }
   }
 
   async function toggleAlwaysLaunchSudo(enable) {
     if (enable) {
       alwaysLaunchSudo.set(true);
-      notify("success", "Her açılışta sudo ile başlatma aktif edildi");
+      notify("success", $currentLocale === "tr" ? "Her açılışta sudo ile başlatma aktif edildi" : "Always launch with sudo enabled");
       if (!$sessionSudoPassword) {
         toggleAdminMode(true);
       }
     } else {
       alwaysLaunchSudo.set(false);
-      notify("info", "Her açılışta sudo ile başlatma kapatıldı");
+      notify("info", $currentLocale === "tr" ? "Her açılışta sudo ile başlatma kapatıldı" : "Always launch with sudo disabled");
     }
   }
+
   async function openUrl(url) {
     try {
       await invoke("open_external_url", { url });
@@ -82,11 +83,16 @@
 
   async function sendTestCrashReport() {
     try {
+      const title = "User Test Diagnostics Report";
+      const body = `### Arch Explorer Diagnostic Ping\n- **Time**: ${new Date().toISOString()}\n- **Platform**: Arch Linux GTK WebKit\n- **Version**: 0.1v\n\nDiagnostic test ping generated from Settings -> About.`;
       const res = await invoke("send_crash_report", {
-        title: "User Test Diagnostics Report",
-        body: `Arch Explorer Diagnostic Ping\nTime: ${new Date().toISOString()}\nPlatform: Arch Linux GTK WebKit`
+        title,
+        body
       });
-      notify("success", `Report generated: ${res}`);
+      // Also open pre-filled GitHub issue in the default browser so it directly reaches @basihamam
+      const issueUrl = `https://github.com/basihamam/arch-explorer-tauri/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
+      openUrl(issueUrl);
+      notify("success", $currentLocale === "tr" ? `Rapor kaydedildi ve GitHub Issue açıldı! (${res})` : `Report saved and GitHub Issue opened! (${res})`);
     } catch (e) {
       notify("error", String(e));
     }
@@ -104,17 +110,17 @@
 
     <!-- Tab navigation -->
     <div class="settings-tabs">
-      <button class="tab-btn" class:active={activeTab === "appearance"} on:click={() => activeTab = "appearance"}>{$t("settings") === "Settings" ? "Appearance" : "Görünüm"}</button>
-      <button class="tab-btn" class:active={activeTab === "layout"} on:click={() => activeTab = "layout"}>{$t("settings") === "Settings" ? "Layout" : "Yerleşim"}</button>
-      <button class="tab-btn" class:active={activeTab === "behavior"} on:click={() => activeTab = "behavior"}>{$t("settings") === "Settings" ? "Behavior" : "Davranış"}</button>
-      <button class="tab-btn" class:active={activeTab === "admin"} on:click={() => activeTab = "admin"}>{$t("settings") === "Settings" ? "Admin" : "Yönetici"}</button>
-      <button class="tab-btn" class:active={activeTab === "advanced"} on:click={() => activeTab = "advanced"}>{$t("settings") === "Settings" ? "Advanced" : "Gelişmiş"}</button>
-      <button class="tab-btn" class:active={activeTab === "about"} on:click={() => activeTab = "about"}>{$t("settings") === "Settings" ? "About & Feedback" : "Hakkında & İletişim"}</button>
+      <button class="tab-btn" class:active={activeTab === "appearance"} on:click={() => activeTab = "appearance"}>{$t("tab_appearance")}</button>
+      <button class="tab-btn" class:active={activeTab === "layout"} on:click={() => activeTab = "layout"}>{$t("tab_layout")}</button>
+      <button class="tab-btn" class:active={activeTab === "behavior"} on:click={() => activeTab = "behavior"}>{$t("tab_behavior")}</button>
+      <button class="tab-btn" class:active={activeTab === "admin"} on:click={() => activeTab = "admin"}>{$t("tab_admin")}</button>
+      <button class="tab-btn" class:active={activeTab === "advanced"} on:click={() => activeTab = "advanced"}>{$t("tab_advanced")}</button>
+      <button class="tab-btn" class:active={activeTab === "about"} on:click={() => activeTab = "about"}>{$t("tab_about")}</button>
     </div>
 
     <div class="settings-body">
 
-      <!-- ================= TAB: GÖRÜNÜM ================= -->
+      <!-- ================= TAB: GÖRÜNÜM / APPEARANCE ================= -->
       {#if activeTab === "appearance"}
         <!-- Dil / Language -->
         <section class="setting-group">
@@ -131,7 +137,7 @@
 
         <!-- Theme -->
         <section class="setting-group">
-          <label class="group-label">Tema</label>
+          <label class="group-label">{$t("theme")}</label>
           <div class="toggle-row">
             <button class="toggle-btn" class:active={$theme === "dark"}  on:click={() => theme.set("dark")}>Dark</button>
             <button class="toggle-btn" class:active={$theme === "light"} on:click={() => theme.set("light")}>Light</button>
@@ -140,7 +146,7 @@
 
         <!-- Accent Color -->
         <section class="setting-group">
-          <label class="group-label">Vurgu Rengi</label>
+          <label class="group-label">{$t("accent_color")}</label>
           <div class="color-row">
             <input type="color" bind:value={$accentColor} class="color-picker" />
             <span class="color-val">{$accentColor}</span>
@@ -150,7 +156,7 @@
 
         <!-- Opacity / Transparency -->
         <section class="setting-group">
-          <label class="group-label">Arka Plan Opaklığı: {Math.round($opacity * 100)}%</label>
+          <label class="group-label">{$t("bg_opacity")}: {Math.round($opacity * 100)}%</label>
           <input
             type="range"
             min="0.3"
@@ -160,33 +166,33 @@
             class="slider"
           />
           <div class="opacity-labels">
-            <span>Ghost (Şeffaf)</span>
-            <span>Tam Opak</span>
+            <span>{$t("ghost_transparent")}</span>
+            <span>{$t("full_opaque")}</span>
           </div>
         </section>
 
         <!-- Blur -->
         <section class="setting-group">
-          <label class="group-label">Arayüz Bulanıklığı (Blur): {$blurAmount}px</label>
+          <label class="group-label">{$t("ui_blur")}: {$blurAmount}px</label>
           <input type="range" min="0" max="40" step="2" bind:value={$blurAmount} class="slider" />
-          <div class="opacity-labels"><span>0 (Yok)</span><span>40px (Maksimum)</span></div>
-          <p class="hint">Sağ tık menüleri, komut paneli, ayarlar ve açılır pencerelerin arkasındaki cisimleri blurlar.</p>
+          <div class="opacity-labels"><span>0</span><span>40px</span></div>
+          <p class="hint">{$t("blur_hint")}</p>
         </section>
 
         <!-- Panel / Overlay Opacity -->
         <section class="setting-group">
-          <label class="group-label">Panel Opaklığı (Modal): {`${Math.round($panelOpacity * 100)}%`}</label>
+          <label class="group-label">{$t("panel_opacity")}: {`${Math.round($panelOpacity * 100)}%`}</label>
           <input type="range" min="0.55" max="0.99" step="0.01" bind:value={$panelOpacity} class="slider" />
           <div class="opacity-labels">
-            <span>Çok şeffaf</span>
-            <span>Opak</span>
+            <span>{$t("very_transparent")}</span>
+            <span>{$t("opaque")}</span>
           </div>
-          <p class="hint">Mount panel, ayarlar, komut paneli gibi ikinci katman pencerelerin opaklığı.</p>
+          <p class="hint">{$t("panel_opacity_hint")}</p>
         </section>
 
         <!-- Presets -->
         <section class="setting-group">
-          <label class="group-label">Hazır Temalar (Presets)</label>
+          <label class="group-label">{$t("preset_themes")}</label>
           <div class="presets">
             {#each PRESETS as p}
               <button
@@ -203,87 +209,81 @@
         </section>
       {/if}
 
-      <!-- ================= TAB: YERLEŞİM ================= -->
+      <!-- ================= TAB: YERLEŞİM / LAYOUT ================= -->
       {#if activeTab === "layout"}
         <!-- Yer İşaretleri İkonları -->
         <section class="setting-group">
-          <label class="group-label">Yer İşaretleri (Bookmarks) İkonları</label>
+          <label class="group-label">{$t("bookmark_icons")}</label>
           <div class="toggle-row">
             <button
               class="toggle-btn"
               class:active={!$bookmarkIconsEnabled}
               on:click={() => bookmarkIconsEnabled.set(false)}
-              title="Klasik sade görünüm (◈ Sabitlenmiş / ⊹ Normal)"
-            >Klasik (◈ / ⊹)</button>
+            >{$t("bookmark_icons_classic")}</button>
             <button
               class="toggle-btn"
               class:active={$bookmarkIconsEnabled}
               on:click={() => bookmarkIconsEnabled.set(true)}
-              title="Özel ikonlar (🏠 Home, 🗑️ Çöp Kutusu, 🖥️ Masaüstü vb.)"
-            >Özel Emojiler</button>
+            >{$t("bookmark_icons_custom")}</button>
           </div>
-          <p class="hint">
-            Sol paneldeki yer işaretlerinin başında klasik simgeler (◈ / ⊹) veya renkli emojiler gösterilsin.
-          </p>
+          <p class="hint">{$t("bookmark_icons_hint")}</p>
         </section>
 
         <!-- Tab Bar Mode -->
         <section class="setting-group">
-          <label class="group-label">Sekme Çubuğu (Tab Bar)</label>
+          <label class="group-label">{$t("tab_bar")}</label>
           <div class="toggle-row">
             <button
               class="toggle-btn"
               class:active={$tabBarMode === "always"}
               on:click={() => tabBarMode.set("always")}
-              title="Her zaman görünür — tek tab bile olsa bar gösterilir"
-            >Her Zaman Göster</button>
+            >{$t("tab_bar_always")}</button>
             <button
               class="toggle-btn"
               class:active={$tabBarMode === "lazy"}
               on:click={() => tabBarMode.set("lazy")}
-              title="2+ tab açıkken belirir, tek tabta gizlenir"
-            >Lazy (2+ Sekme)</button>
+            >{$t("tab_bar_lazy")}</button>
           </div>
           <p class="hint">
-            <strong>Her Zaman:</strong> Sekme çubuğu her zaman görünür.<br>
-            <strong>Lazy:</strong> Sadece 2 veya daha fazla sekme açıkken gösterilir.
+            <strong>{$t("tab_bar_always")}:</strong> {$t("tab_bar_hint_always")}<br>
+            <strong>{$t("tab_bar_lazy")}:</strong> {$t("tab_bar_hint_lazy")}
           </p>
         </section>
 
         <!-- Preview Mode -->
         <section class="setting-group">
-          <label class="group-label">Önizleme Paneli (Preview Panel)</label>
+          <label class="group-label">{$t("preview_mode_title")}</label>
           <div class="preview-mode-grid">
             <button class="mode-btn" class:active={$previewMode === "manual"}
-              on:click={() => previewMode.set("manual")}>
+              on:click={() => { previewMode.set("manual"); showPreview.set(false); }}>
               <span class="mode-icon">⊡</span>
-              <span class="mode-name">Manuel</span>
-              <span class="mode-desc">Kapalı — sağ tık → Preview ile açılır</span>
+              <span class="mode-name">{$t("mode_manual")}</span>
+              <span class="mode-desc">{$t("mode_manual_desc")}</span>
             </button>
             <button class="mode-btn" class:active={$previewMode === "always"}
-              on:click={() => previewMode.set("always")}>
+              on:click={() => { previewMode.set("always"); showPreview.set(true); }}>
               <span class="mode-icon">◫</span>
-              <span class="mode-name">Her Zaman</span>
-              <span class="mode-desc">Her zaman açık, boşken önceki/disk bilgisi</span>
+              <span class="mode-name">{$t("mode_always")}</span>
+              <span class="mode-desc">{$t("mode_always_desc")}</span>
             </button>
             <button class="mode-btn" class:active={$previewMode === "auto"}
-              on:click={() => previewMode.set("auto")}>
+              on:click={() => { previewMode.set("auto"); showPreview.set(true); }}>
               <span class="mode-icon">◐</span>
-              <span class="mode-name">Otomatik</span>
-              <span class="mode-desc">Seçim varsa açık, yoksa gizlenir</span>
+              <span class="mode-name">{$t("mode_auto")}</span>
+              <span class="mode-desc">{$t("mode_auto_desc")}</span>
             </button>
             <button class="mode-btn" class:active={$previewMode === "custom"}
-              on:click={() => previewMode.set("custom")}>
+              on:click={() => { previewMode.set("custom"); }}>
               <span class="mode-icon">⚙</span>
-              <span class="mode-name">Özel</span>
-              <span class="mode-desc">Sadece seçili dosya tipleri için</span>
+              <span class="mode-name">{$t("mode_custom")}</span>
+              <span class="mode-desc">{$t("mode_custom_desc")}</span>
             </button>
           </div>
 
           {#if $previewMode === "custom"}
             <div class="custom-types-section">
-              <label class="group-label" style="margin-top:8px">Gösterilecek Uzantılar</label>
-              <p class="hint">Virgülle ayır: png, jpg, rs, md, pdf</p>
+              <label class="group-label" style="margin-top:8px">{$t("preview_extensions")}</label>
+              <p class="hint">{$t("preview_extensions_hint")}</p>
               <input
                 class="ctrl-input mono"
                 value={$previewCustomTypes.join(", ")}
@@ -297,37 +297,60 @@
           {/if}
         </section>
 
+        <!-- Klasör Önizleme Ayarı -->
+        <section class="setting-group">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px">
+            <label class="group-label" style="margin-bottom:0">{$t("folder_preview_title")}</label>
+            <div class="toggle-row">
+              <button
+                class="toggle-btn"
+                class:active={$folderPreviewEnabled}
+                on:click={() => folderPreviewEnabled.set(true)}
+              >{$t("on")}</button>
+              <button
+                class="toggle-btn"
+                class:active={!$folderPreviewEnabled}
+                on:click={() => folderPreviewEnabled.set(false)}
+              >{$t("off")}</button>
+            </div>
+          </div>
+          <p class="hint">
+            <strong>{$t("on")}:</strong> {$t("folder_preview_hint_on")}<br>
+            <strong>{$t("off")}:</strong> {$t("folder_preview_hint_off")}
+          </p>
+        </section>
+
         <!-- Grid & Thumbnails -->
         <section class="setting-group">
-          <label class="group-label">Izgara ve Thumbnail Boyutu</label>
+          <label class="group-label">{$t("grid_thumbnail_size")}</label>
           <div class="preview-mode-grid">
             <button class="mode-btn" class:active={$thumbnailMode === "always"}
               on:click={() => thumbnailMode.set("always")}>
               <span class="mode-icon">🖼</span>
-              <span class="mode-name">Her Zaman</span>
-              <span class="mode-desc">Tüm resimler her zaman thumbnail gösterir</span>
+              <span class="mode-name">{$t("mode_always")}</span>
+              <span class="mode-desc">{$t("grid_thumb_always_desc")}</span>
             </button>
             <button class="mode-btn" class:active={$thumbnailMode === "auto"}
               on:click={() => thumbnailMode.set("auto")}>
               <span class="mode-icon">◐</span>
-              <span class="mode-name">Otomatik</span>
-              <span class="mode-desc">Grid {$thumbnailMinSize}px+ ise thumbnail, küçükse ikon</span>
+              <span class="mode-name">{$t("mode_auto")}</span>
+              <span class="mode-desc">{$t("grid_thumb_auto_desc")}</span>
             </button>
             <button class="mode-btn" class:active={$thumbnailMode === "custom"}
               on:click={() => thumbnailMode.set("custom")}
               style="grid-column: 1/-1">
               <span class="mode-icon">⚙</span>
-              <span class="mode-name">Özel</span>
-              <span class="mode-desc">Aşağıdan minimum boyutu kendin belirle</span>
+              <span class="mode-name">{$t("mode_custom")}</span>
+              <span class="mode-desc">{$t("grid_thumb_custom_desc")}</span>
             </button>
           </div>
 
           {#if $thumbnailMode === "auto" || $thumbnailMode === "custom"}
             <div style="margin-top:8px; display:flex; flex-direction:column; gap:6px">
               <label class="group-label">
-                Minimum Thumbnail Boyutu: {$thumbnailMinSize}px
+                {$t("min_thumb_size")}: {$thumbnailMinSize}px
                 <span style="color:var(--text-dim); font-weight:400; margin-left:4px">
-                  (şu an: {$gridZoom}px → thumbnail {$gridZoom >= $thumbnailMinSize ? "✓ görünür" : "✗ gizli"})
+                  ({$gridZoom}px → thumbnail {$gridZoom >= $thumbnailMinSize ? "✓" : "✗"})
                 </span>
               </label>
               <input
@@ -340,8 +363,8 @@
           {/if}
 
           <div style="margin-top:8px; display:flex; flex-direction:column; gap:6px">
-            <label class="group-label">Grid Yakınlaştırma (Zoom): {$gridZoom}px
-              <span style="color:var(--text-dim); font-weight:400; margin-left:4px">(Ctrl + Tekerlek)</span>
+            <label class="group-label">{$t("grid_zoom")}: {$gridZoom}px
+              <span style="color:var(--text-dim); font-weight:400; margin-left:4px">(Ctrl + Wheel)</span>
             </label>
             <input
               type="range" min="60" max="220" step="10"
@@ -353,174 +376,156 @@
         </section>
       {/if}
 
-      <!-- ================= TAB: DAVRANIŞ ================= -->
+      <!-- ================= TAB: DAVRANIŞ / BEHAVIOR ================= -->
       {#if activeTab === "behavior"}
         <!-- Auto Reload -->
         <section class="setting-group">
-          <label class="group-label">Otomatik Yenileme (Auto Reload)</label>
+          <label class="group-label">{$t("auto_reload_title")}</label>
           <div class="toggle-row">
-            <button class="toggle-btn" class:active={$autoReload}  on:click={() => autoReload.set(true)}>Açık</button>
-            <button class="toggle-btn" class:active={!$autoReload} on:click={() => autoReload.set(false)}>Kapalı</button>
+            <button class="toggle-btn" class:active={$autoReload}  on:click={() => autoReload.set(true)}>{$t("on")}</button>
+            <button class="toggle-btn" class:active={!$autoReload} on:click={() => autoReload.set(false)}>{$t("off")}</button>
           </div>
-          <p class="hint">
-            Klasör içindeki değişiklikleri inotify ile izler ve otomatik yeniler. Kapatıldığında F5 ile manuel yenilenir.
-          </p>
+          <p class="hint">{$t("auto_reload_hint")}</p>
         </section>
 
         <!-- Du Cache -->
         <section class="setting-group">
-          <label class="group-label">Dizin Boyut Önbelleği (DU Cache)</label>
-          <p class="hint">
-            Klasör boyutları arka planda hesaplandıktan sonra önbelleğe kaydedilir. Önbelleği temizlediğinizde tüm boyutlar sıfırdan tekrar taranır.
-          </p>
+          <label class="group-label">{$t("du_cache_title")}</label>
+          <p class="hint">{$t("du_cache_hint")}</p>
           <button class="btn" style="width:fit-content;margin-top:4px"
             on:click={async () => {
               const n = await invoke("clear_du_cache").catch(() => 0);
               window.dispatchEvent(new CustomEvent("clear-dir-size-cache"));
-              notify("success", `${n} boyut önbellek kaydı silindi ve sıfırlandı`);
+              notify("success", $currentLocale === "tr" ? `${n} boyut önbellek kaydı silindi ve sıfırlandı` : `${n} dir size cache entries cleared`);
             }}
           >
-            Boyut Önbelleğini Temizle
+            {$t("du_cache_clear")}
           </button>
         </section>
 
         <!-- Video Hover Scrubbing -->
         <section class="setting-group">
-          <label class="group-label">Video Kare Kaydırma (Hover Scrubbing)</label>
+          <label class="group-label">{$t("hover_scrub_title")}</label>
           <div class="toggle-row">
-            <button class="toggle-btn" class:active={$videoHoverScrubbing} on:click={() => videoHoverScrubbing.set(true)}>Açık</button>
-            <button class="toggle-btn" class:active={!$videoHoverScrubbing} on:click={() => videoHoverScrubbing.set(false)}>Kapalı</button>
+            <button class="toggle-btn" class:active={$videoHoverScrubbing} on:click={() => videoHoverScrubbing.set(true)}>{$t("on")}</button>
+            <button class="toggle-btn" class:active={!$videoHoverScrubbing} on:click={() => videoHoverScrubbing.set(false)}>{$t("off")}</button>
           </div>
-          <p class="hint">
-            Fareyi video küçük resminin (thumbnail) üzerinde sağa-sola kaydırdığınızda YouTube gibi videonun farklı anlarından kareleri anlık gösterir.
-          </p>
+          <p class="hint">{$t("hover_scrub_hint")}</p>
         </section>
 
         <!-- Conflict Resolution: Files & Folders -->
         <section class="setting-group">
-          <label class="group-label">Dosya ve Klasör Çakışma Yönetimi</label>
+          <label class="group-label">{$t("conflict_management_title")}</label>
           
           <div style="display:flex; flex-direction:column; gap:12px; margin-top:6px">
             <div>
-              <span style="font-size:12px; font-weight:600; color:var(--text-secondary)">Dosya Çakışmasında:</span>
+              <span style="font-size:12px; font-weight:600; color:var(--text-secondary)">{$t("conflict_on_files")}</span>
               <div class="toggle-row" style="margin-top:4px">
-                <button class="toggle-btn" class:active={$conflictFileAction === "ask"} on:click={() => conflictFileAction.set("ask")}>Her Zaman Sor</button>
-                <button class="toggle-btn" class:active={$conflictFileAction === "replace"} on:click={() => conflictFileAction.set("replace")}>Üzerine Yaz</button>
-                <button class="toggle-btn" class:active={$conflictFileAction === "rename"} on:click={() => conflictFileAction.set("rename")}>İkisini de Koru</button>
-                <button class="toggle-btn" class:active={$conflictFileAction === "skip"} on:click={() => conflictFileAction.set("skip")}>Atla</button>
+                <button class="toggle-btn" class:active={$conflictFileAction === "ask"} on:click={() => conflictFileAction.set("ask")}>{$t("conflict_always_ask")}</button>
+                <button class="toggle-btn" class:active={$conflictFileAction === "replace"} on:click={() => conflictFileAction.set("replace")}>{$t("conflict_replace")}</button>
+                <button class="toggle-btn" class:active={$conflictFileAction === "rename"} on:click={() => conflictFileAction.set("rename")}>{$t("conflict_keep_both")}</button>
+                <button class="toggle-btn" class:active={$conflictFileAction === "skip"} on:click={() => conflictFileAction.set("skip")}>{$t("conflict_skip")}</button>
               </div>
             </div>
 
             <div>
-              <span style="font-size:12px; font-weight:600; color:var(--text-secondary)">Klasör Çakışmasında:</span>
+              <span style="font-size:12px; font-weight:600; color:var(--text-secondary)">{$t("conflict_on_dirs")}</span>
               <div class="toggle-row" style="margin-top:4px">
-                <button class="toggle-btn" class:active={$conflictDirAction === "ask"} on:click={() => conflictDirAction.set("ask")}>Her Zaman Sor</button>
-                <button class="toggle-btn" class:active={$conflictDirAction === "replace"} on:click={() => conflictDirAction.set("replace")}>Üzerine Yaz / Birleştir</button>
-                <button class="toggle-btn" class:active={$conflictDirAction === "rename"} on:click={() => conflictDirAction.set("rename")}>İkisini de Koru</button>
-                <button class="toggle-btn" class:active={$conflictDirAction === "skip"} on:click={() => conflictDirAction.set("skip")}>Atla</button>
+                <button class="toggle-btn" class:active={$conflictDirAction === "ask"} on:click={() => conflictDirAction.set("ask")}>{$t("conflict_always_ask")}</button>
+                <button class="toggle-btn" class:active={$conflictDirAction === "replace"} on:click={() => conflictDirAction.set("replace")}>{$t("conflict_replace_merge")}</button>
+                <button class="toggle-btn" class:active={$conflictDirAction === "rename"} on:click={() => conflictDirAction.set("rename")}>{$t("conflict_keep_both")}</button>
+                <button class="toggle-btn" class:active={$conflictDirAction === "skip"} on:click={() => conflictDirAction.set("skip")}>{$t("conflict_skip")}</button>
               </div>
             </div>
           </div>
-          <p class="hint" style="margin-top:8px">
-            Üzerine yazılan tüm dosyalar güvenli yedek alanına alınır; Ctrl+Z yapıldığında eski dosyalarınız eksiksiz geri yüklenir!
-          </p>
+          <p class="hint" style="margin-top:8px">{$t("conflict_backup_hint")}</p>
         </section>
 
         <!-- Thumbnail Cache & RAM Cleanup -->
         <section class="setting-group">
-          <label class="group-label">Bellek & Önbellek Temizliği (RAM / Cache)</label>
-          <p class="hint">
-            Küçük resim önbelleğini ve bellekteki tüm görsel/dizin nesnelerini boşaltarak RAM kullanımını anında sıfırlar.
-          </p>
+          <label class="group-label">{$t("ram_cache_cleanup_title")}</label>
+          <p class="hint">{$t("ram_cache_cleanup_hint")}</p>
           <div style="display:flex; gap:8px; margin-top:6px; flex-wrap:wrap">
             <button class="btn" style="flex:1"
               on:click={async () => {
                 window.dispatchEvent(new CustomEvent('arch:free-ram'));
                 const n = await invoke("clear_thumbnail_cache").catch(() => 0);
-                notify("success", `⚡ RAM & Görsel Önbelleği temizlendi! (${n} önbellek silindi)`);
+                notify("success", $currentLocale === "tr" ? `⚡ RAM & Görsel Önbelleği temizlendi! (${n} önbellek silindi)` : `⚡ RAM & Image Cache cleared! (${n} entries freed)`);
               }}
             >
-              🧹 Belleği & RAM'i Temizle
+              {$t("clear_ram_now")}
             </button>
             <button class="btn" style="flex:1"
               on:click={async () => {
                 const n = await invoke("clear_thumbnail_cache").catch(() => 0);
-                notify("success", `${n} thumbnail önbellek kaydı silindi`);
+                notify("success", $currentLocale === "tr" ? `${n} thumbnail önbellek kaydı silindi` : `${n} thumbnail cache items deleted`);
               }}
             >
-              Yalnızca Thumbnail'leri Sil
+              {$t("clear_thumbs_only")}
             </button>
           </div>
         </section>
       {/if}
 
-      <!-- ================= TAB: YÖNETİCİ ================= -->
+      <!-- ================= TAB: YÖNETİCİ / ADMIN ================= -->
       {#if activeTab === "admin"}
         <!-- Admin Mode & Sudo Settings -->
         <section class="setting-group">
-          <label class="group-label">Yönetici Yetkileri (Root / Admin)</label>
+          <label class="group-label">{$t("admin_privileges_title")}</label>
           
           <div style="display:flex; flex-direction:column; gap:16px;">
             <div>
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px">
-                <span style="font-weight:600; font-size:13px">Admin Modu</span>
+                <span style="font-weight:600; font-size:13px">{$t("admin_mode_label")}</span>
                 <div class="toggle-row">
-                  <button class="toggle-btn" class:active={$adminMode} on:click={() => toggleAdminMode(true)}>Açık</button>
-                  <button class="toggle-btn" class:active={!$adminMode} on:click={() => toggleAdminMode(false)}>Kapalı</button>
+                  <button class="toggle-btn" class:active={$adminMode} on:click={() => toggleAdminMode(true)}>{$t("on")}</button>
+                  <button class="toggle-btn" class:active={!$adminMode} on:click={() => toggleAdminMode(false)}>{$t("off")}</button>
                 </div>
               </div>
-              <p class="hint">
-                Aktif olduğunda hiçbir klasöre girerken veya dosya taşırken şifre sormadan doğrudan root yetkisiyle çalışır.
-              </p>
+              <p class="hint">{$t("admin_mode_hint")}</p>
             </div>
 
             <div>
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px">
-                <span style="font-weight:600; font-size:13px">Her Zaman Sudo ile Başlat</span>
+                <span style="font-weight:600; font-size:13px">{$t("always_sudo_label")}</span>
                 <div class="toggle-row">
-                  <button class="toggle-btn" class:active={$alwaysLaunchSudo} on:click={() => toggleAlwaysLaunchSudo(true)}>Açık</button>
-                  <button class="toggle-btn" class:active={!$alwaysLaunchSudo} on:click={() => toggleAlwaysLaunchSudo(false)}>Kapalı</button>
+                  <button class="toggle-btn" class:active={$alwaysLaunchSudo} on:click={() => toggleAlwaysLaunchSudo(true)}>{$t("on")}</button>
+                  <button class="toggle-btn" class:active={!$alwaysLaunchSudo} on:click={() => toggleAlwaysLaunchSudo(false)}>{$t("off")}</button>
                 </div>
               </div>
-              <p class="hint">
-                Uygulama her açılışında bir kere şifre sorar ve Admin Modu'nu baştan itibaren otomatik olarak aktif eder.
-              </p>
+              <p class="hint">{$t("always_sudo_hint")}</p>
             </div>
           </div>
         </section>
       {/if}
 
-      <!-- ================= TAB: GELİŞMİŞ ================= -->
+      <!-- ================= TAB: GELİŞMİŞ / ADVANCED ================= -->
       {#if activeTab === "advanced"}
         <!-- RAM & Memory Optimization -->
         <section class="setting-group">
-          <label class="group-label">Bellek ve RAM Optimizasyonu (Performance)</label>
-          <p class="hint">
-            On binlerce dosya içeren devasa klasörler açıldığında bellek otomatik olarak sanal pencerelenir (Virtual Chunking). RAM kullanımını anında sıfırlamak için önbelleği ve geçici nesneleri temizleyebilirsiniz.
-          </p>
+          <label class="group-label">{$t("perf_optimization_title")}</label>
+          <p class="hint">{$t("perf_optimization_hint")}</p>
           <div style="display:flex; gap:8px; margin-top:8px">
             <button class="btn" style="flex:1"
               on:click={async () => {
                 window.dispatchEvent(new CustomEvent('arch:free-ram'));
                 const n = await invoke("clear_thumbnail_cache").catch(() => 0);
-                notify("success", `⚡ RAM ve Görsel Önbelleği temizlendi! (${n} önbellek boşaltıldı)`);
+                notify("success", $currentLocale === "tr" ? `⚡ RAM ve Görsel Önbelleği temizlendi! (${n} önbellek boşaltıldı)` : `⚡ RAM & Image cache cleaned! (${n} entries freed)`);
               }}
             >
-              🧹 Belleği & RAM'i Şimdi Temizle
+              {$t("clear_ram_advanced")}
             </button>
           </div>
         </section>
 
         <!-- Custom CSS -->
         <section class="setting-group">
-          <label class="group-label">Özel CSS Değişkenleri (Custom CSS)</label>
-          <p class="hint">
-            Uygulamanın fontları, renkleri veya boşlukları için <code>src/app.css</code> dosyasındaki <code>--variable</code> tanımlarını düzenleyebilirsiniz.
-          </p>
+          <label class="group-label">{$t("custom_css_title")}</label>
+          <p class="hint">{$t("custom_css_hint")}</p>
         </section>
 
         <section class="setting-group">
-          <label class="group-label">System Information</label>
+          <label class="group-label">{$t("sys_info_title")}</label>
           <p class="hint">
             Linux Arch Linux GTK WebKit · Tauri 2.0 Native Shell Integration · Zero-Allocation Engine
           </p>
@@ -531,7 +536,7 @@
       {#if activeTab === "about"}
         <!-- Developer & Contact -->
         <section class="setting-group">
-          <label class="group-label">Developer & Community</label>
+          <label class="group-label">{$t("dev_community_title")}</label>
           <div style="background:var(--bg-tertiary); border:1px solid var(--border); border-radius:var(--radius-md); padding:14px; display:flex; flex-direction:column; gap:10px;">
             <div style="display:flex; align-items:center; justify-content:space-between;">
               <div>
@@ -539,18 +544,16 @@
                 <div style="font-size:11px; color:var(--accent); font-family:var(--font-mono)">@basihamam</div>
               </div>
               <button class="btn btn-accent" on:click={() => openUrl("https://github.com/basihamam")}>
-                ★ GitHub Profile
+                {$t("github_profile")}
               </button>
             </div>
-            <p class="hint">
-              Arch Explorer is built with passion for the Arch Linux ecosystem. For questions, feature requests, or direct contact, check out the official GitHub page:
-            </p>
+            <p class="hint">{$t("dev_community_hint")}</p>
             <div style="display:flex; gap:8px; flex-wrap:wrap">
               <button class="btn" style="flex:1" on:click={() => openUrl("https://github.com/basihamam/arch-explorer-tauri")}>
-                📂 GitHub Repository
+                {$t("github_repo")}
               </button>
               <button class="btn" style="flex:1" on:click={reportBug}>
-                💬 Submit Feedback / Issues
+                {$t("submit_feedback")}
               </button>
             </div>
           </div>
@@ -558,26 +561,24 @@
 
         <!-- Crash & Error Reporting -->
         <section class="setting-group">
-          <label class="group-label">Crash & Error Telemetry</label>
+          <label class="group-label">{$t("crash_telemetry_title")}</label>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px">
-            <span style="font-weight:600; font-size:13px">Automatic Crash Reports</span>
+            <span style="font-weight:600; font-size:13px">{$t("auto_crash_reports")}</span>
             <div class="toggle-row">
-              <button class="toggle-btn" class:active={$autoCrashReport} on:click={() => autoCrashReport.set(true)}>Enabled</button>
-              <button class="toggle-btn" class:active={!$autoCrashReport} on:click={() => autoCrashReport.set(false)}>Disabled</button>
+              <button class="toggle-btn" class:active={$autoCrashReport} on:click={() => autoCrashReport.set(true)}>{$t("on")}</button>
+              <button class="toggle-btn" class:active={!$autoCrashReport} on:click={() => autoCrashReport.set(false)}>{$t("off")}</button>
             </div>
           </div>
-          <p class="hint">
-            When an unexpected error or UI crash happens, Arch Explorer automatically generates a clean crash diagnostic report and opens an issue template so the developer (@basihamam) can investigate and fix it instantly.
-          </p>
+          <p class="hint">{$t("auto_crash_hint")}</p>
           <div style="margin-top:6px">
             <button class="btn" on:click={sendTestCrashReport}>
-              ⚡ Send Test Diagnostic Report
+              {$t("send_test_crash_report")}
             </button>
           </div>
         </section>
 
         <section class="setting-group">
-          <label class="group-label">Version</label>
+          <label class="group-label">{$t("version_title")}</label>
           <p class="hint mono">
             Arch Explorer v0.1.0 (x86_64 Linux) · Open Source Community Edition
           </p>
@@ -591,8 +592,6 @@
   .overlay {
     position: fixed; inset: 0;
     background: rgba(0,0,0,0.45);
-    
-    
     display: flex; align-items: center; justify-content: center;
     z-index: 100;
   }

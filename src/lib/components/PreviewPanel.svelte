@@ -7,8 +7,10 @@
     previewEntry, showPreview, blockDevices,
     previewMode, previewCustomTypes,
     selectedDevice, currentPath, requestSudo,
-    openEntry,
+    openEntry, selectedPaths, rightSelectedPaths,
+    isRubberbandSelecting, folderPreviewEnabled,
   } from "../stores/explorer.js";
+  import { t } from "../i18n.js";
 
   let preview   = null;
   let loading   = false;
@@ -80,13 +82,30 @@
 
   // ── previewMode → showPreview senkronizasyonu ──
   // Orijinal {#if $showPreview} korunuyor, sadece store'u yönetiyoruz
-  $: if ($previewMode === "always")  showPreview.set(true);
-  $: if ($previewMode === "manual")  showPreview.set(false);
-  // auto: seçim varsa aç, yoksa kapat
-  $: if ($previewMode === "auto") showPreview.set(!!$previewEntry || !!$selectedDevice);
+  $: if ($isRubberbandSelecting) {
+    // Multi-selection transparent şeyi kullanılırken önizlemeye ASLA dokunma!
+  } else {
+    if ($previewMode === "always")  showPreview.set(true);
+    if ($previewMode === "manual")  showPreview.set(false);
+    // auto: seçim varsa aç, yoksa kapat
+    if ($previewMode === "auto") {
+      const isMulti = ($selectedPaths && $selectedPaths.size > 1) || ($rightSelectedPaths && $rightSelectedPaths.size > 1);
+      const isFolderDisabled = $previewEntry?.is_dir && !$folderPreviewEnabled;
+      showPreview.set((!!$previewEntry && !isMulti && !isFolderDisabled) || !!$selectedDevice);
+    }
+    // custom: özel ayarda seçim kurallara uyuyorsa ve klasör değilse (varsayılanda klasör kapalı) aç
+    if ($previewMode === "custom") {
+      const isMulti = ($selectedPaths && $selectedPaths.size > 1) || ($rightSelectedPaths && $rightSelectedPaths.size > 1);
+      showPreview.set(!isMulti && !!$previewEntry && shouldShowCustom($previewEntry));
+    }
+  }
 
   function shouldShowCustom(entry) {
     if (!entry) return false;
+    // Özel ayarda klasörleri gösterme varsayılan olarak kapalıdır (kullanıcı "folder" veya "dir" yazarsa açılır)
+    if (entry.is_dir) {
+      return ($previewCustomTypes || []).includes("folder") || ($previewCustomTypes || []).includes("dir");
+    }
     const ext = (entry.extension || "").toLowerCase();
     return ($previewCustomTypes || []).includes(ext);
   }
@@ -245,8 +264,12 @@
   }
 
   // Svelte 5 uyumlu TEK ve doğrudan reaktif blok (aracı değişken zincirleme kopmalarını önler)
-  $: {
-    const entry = $previewEntry || ($selectedDevice ? null : ($currentPath ? {
+  $: if (!$isRubberbandSelecting) {
+    const hasSelection = ($selectedPaths && $selectedPaths.size > 0) || ($rightSelectedPaths && $rightSelectedPaths.size > 0);
+    const isMulti = ($selectedPaths && $selectedPaths.size > 1) || ($rightSelectedPaths && $rightSelectedPaths.size > 1);
+    // Özel modda, klasör önizleme kapalıyken veya herhangi bir seçim varken klasör fallback kapalıdır
+    const allowFolderFallback = $previewMode !== "custom" && !hasSelection && $folderPreviewEnabled;
+    const entry = (!isMulti ? $previewEntry : null) || ($selectedDevice ? null : ((allowFolderFallback && $currentPath) ? {
       name: $currentPath.split("/").filter(Boolean).pop() || "/",
       path: $currentPath,
       is_dir: true,
@@ -257,54 +280,11 @@
       extension: ""
     } : null));
 
-    activeEntry = entry;
+    const isFolder = entry?.is_dir;
+    const isFolderDisabled = isFolder && !$folderPreviewEnabled;
 
-    if (entry) {
-      if ($selectedDevice) selectedDevice.set(null);
-
-      if (entry.path !== lastPreviewPath) {
-        lastPreviewPath = entry.path;
-        imgSrc   = null;
-        mediaSrc = null;
-        assetSrc = null;
-        preview  = null;
-        error    = null;
-        duResult = null;
-        videoPoster = null;
-        videoError = false;
-        audioError = false;
-
-        clearDuPoll();
-        clearTimeout(previewTimer);
-        clearTimeout(duTimer);
-        clearTimeout(duLoadingTimeout);
-
-        if ($previewMode === "custom" && !shouldShowCustom(entry)) {
-          loading = false;
-          duLoading = false;
-        } else if (isImage(entry.mime_type, entry)) {
-          if (entry.path.startsWith("adb://")) {
-            duLoading = false;
-            previewTimer = setTimeout(() => {
-              loadPreview(entry.path);
-            }, 30);
-          } else {
-            imgSrc = convertFileSrc(entry.path);
-            loading = false;
-            duLoading = false;
-          }
-        } else if (isVideo(entry)) {
-          loadVideoPreview(entry);
-        } else if (entry.is_dir) {
-          loadDirPreview(entry.path);
-        } else {
-          duLoading = false;
-          previewTimer = setTimeout(() => {
-            loadPreview(entry.path);
-          }, 60);
-        }
-      }
-    } else if (!$selectedDevice) {
+    if (isMulti || isFolderDisabled || ($previewMode === "custom" && (!entry || !shouldShowCustom(entry))) || (!entry && hasSelection)) {
+      activeEntry = null;
       lastPreviewPath = null;
       clearDuPoll();
       clearTimeout(previewTimer);
@@ -319,6 +299,67 @@
       loading  = false;
       duLoading = false;
       duResult = null;
+    } else {
+      activeEntry = entry;
+
+      if (entry) {
+        if ($selectedDevice) selectedDevice.set(null);
+
+        if (entry.path !== lastPreviewPath) {
+          lastPreviewPath = entry.path;
+          imgSrc   = null;
+          mediaSrc = null;
+          assetSrc = null;
+          preview  = null;
+          error    = null;
+          duResult = null;
+          videoPoster = null;
+          videoError = false;
+          audioError = false;
+
+          clearDuPoll();
+          clearTimeout(previewTimer);
+          clearTimeout(duTimer);
+          clearTimeout(duLoadingTimeout);
+
+          if (isImage(entry.mime_type, entry)) {
+            if (entry.path.startsWith("adb://")) {
+              duLoading = false;
+              previewTimer = setTimeout(() => {
+                loadPreview(entry.path);
+              }, 30);
+            } else {
+              imgSrc = convertFileSrc(entry.path);
+              loading = false;
+              duLoading = false;
+            }
+          } else if (isVideo(entry)) {
+            loadVideoPreview(entry);
+          } else if (entry.is_dir) {
+            loadDirPreview(entry.path);
+          } else {
+            duLoading = false;
+            previewTimer = setTimeout(() => {
+              loadPreview(entry.path);
+            }, 60);
+          }
+        }
+      } else if (!$selectedDevice) {
+        lastPreviewPath = null;
+        clearDuPoll();
+        clearTimeout(previewTimer);
+        clearTimeout(duTimer);
+        clearTimeout(duLoadingTimeout);
+        preview  = null;
+        imgSrc   = null;
+        mediaSrc = null;
+        assetSrc = null;
+        videoPoster = null;
+        error    = null;
+        loading  = false;
+        duLoading = false;
+        duResult = null;
+      }
     }
   }
 
@@ -408,6 +449,13 @@
     loading = false;
     error = null;
     preview = null;
+    imgSrc = null;
+    mediaSrc = null;
+    assetSrc = null;
+    videoPoster = null;
+    videoError = false;
+    audioError = false;
+    isPlayingVideo = false;
 
     invoke("get_file_info", { path })
       .then(info => {
@@ -741,6 +789,31 @@
         {:else if error}
           <div class="pv-empty err"><span>⚠</span><span>{error}</span></div>
 
+        {:else if activeEntry?.is_dir}
+          <div class="pv-dir">
+            {#if duResult?.permission_denied}
+              <span class="dir-count" style="font-size:24px; color:var(--warning)">🔒</span>
+              <span class="dir-label" style="color:var(--warning)">Permission Denied</span>
+              <button
+                class="btn btn-sm btn-accent"
+                style="margin-top:10px; font-size:11px; padding:4px 10px; border-radius:6px; cursor:pointer;"
+                on:click={calculateDirWithSudo}
+                disabled={duLoading}
+              >
+                {duLoading ? "Calculating…" : "Calculate Size with Root"}
+              </button>
+            {:else if duResult && !duResult.is_calculating}
+              <span class="dir-count">{formatSize(duResult.size)}</span>
+              <span class="dir-label">{duResult.file_count} {$t("items_count")}</span>
+              {#if duResult.from_cache}
+                <span style="font-size:9px;color:var(--text-dim);font-style:italic">cached</span>
+              {/if}
+            {:else}
+              <span class="dir-count">{duResult?.file_count ?? preview?.line_count ?? 0}</span>
+              <span class="dir-label">{$t("items_count")}</span>
+            {/if}
+          </div>
+
         {:else if imgSrc}
           <!-- Image: convertFileSrc ile direkt yükle — başarısız olursa (ör. root dosyası) get_file_preview ile base64 dene -->
           <img class="pv-image" src={imgSrc} alt={activeEntry.name}
@@ -893,31 +966,6 @@
                 {/each}
               </div>
             {/if}
-
-          {:else if preview.kind === "dir"}
-            <div class="pv-dir">
-              {#if duResult?.permission_denied}
-                <span class="dir-count" style="font-size:24px; color:var(--warning)">🔒</span>
-                <span class="dir-label" style="color:var(--warning)">Permission Denied</span>
-                <button
-                  class="btn btn-sm btn-accent"
-                  style="margin-top:10px; font-size:11px; padding:4px 10px; border-radius:6px; cursor:pointer;"
-                  on:click={calculateDirWithSudo}
-                  disabled={duLoading}
-                >
-                  {duLoading ? "Calculating…" : "Calculate Size with Root"}
-                </button>
-              {:else if duResult && !duResult.is_calculating}
-                <span class="dir-count">{formatSize(duResult.size)}</span>
-                <span class="dir-label">{duResult.file_count} {$t("items_count")}</span>
-                {#if duResult.from_cache}
-                  <span style="font-size:9px;color:var(--text-dim);font-style:italic">cached</span>
-                {/if}
-              {:else}
-                <span class="dir-count">{duResult?.file_count ?? preview.line_count ?? 0}</span>
-                <span class="dir-label">{$t("items_count")}</span>
-              {/if}
-            </div>
 
           {/if}
         {/if}
