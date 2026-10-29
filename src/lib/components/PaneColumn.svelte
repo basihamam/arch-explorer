@@ -1779,14 +1779,9 @@
     padding: 1px 6px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.4);
   }
-  .pane-grid-item:hover:not(.selected) .pane-grid-icon {
+  .pane-grid-item:hover:not(.selected) {
     background: var(--bg-hover, rgba(255,255,255,0.06));
-    border-radius: 6px;
-  }
-  .pane-grid-item:hover:not(.selected) .pane-grid-name {
-    background: var(--bg-hover, rgba(255,255,255,0.08));
-    border-radius: 4px;
-    padding: 1px 6px;
+    border-color: var(--border, rgba(255,255,255,0.08));
   }
   .pane-grid-icon {
     line-height: 1;

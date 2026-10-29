@@ -221,24 +221,7 @@ video:-webkit-full-screen {
   box-shadow: 0 4px 14px rgba(255, 95, 109, 0.3);
 }
 
-/* Micro animations for grid items and list rows */
-.grid-item {
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.15s ease, border-color 0.15s ease, box-shadow 0.2s ease !important;
-}
-.grid-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
-}
-.grid-item:active {
-  transform: translateY(0px) scale(0.98);
-}
 
-.list-row {
-  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), background 0.15s ease, border-color 0.15s ease !important;
-}
-.list-row:hover {
-  transform: translateX(3px);
-}
 
 /* ---- Inputs ---- */
 input, textarea {
